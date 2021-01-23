@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Systolic-Array-Simulator", "Systolic-Array-Simulator.vcxproj", "{46DD71A0-D7B6-411A-8C84-C7D8B835B288}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "systolic_test", "..\systolic_test\systolic_test.vcxproj", "{F2EB3052-A04A-42FC-A315-43F53EA164F5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Systolic-Array-Test", "..\Systolic-Array-Test\Systolic-Array-Test.vcxproj", "{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,14 +23,14 @@ Global
 		{46DD71A0-D7B6-411A-8C84-C7D8B835B288}.Release|x64.Build.0 = Release|x64
 		{46DD71A0-D7B6-411A-8C84-C7D8B835B288}.Release|x86.ActiveCfg = Release|Win32
 		{46DD71A0-D7B6-411A-8C84-C7D8B835B288}.Release|x86.Build.0 = Release|Win32
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Debug|x64.ActiveCfg = Debug|x64
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Debug|x64.Build.0 = Debug|x64
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Debug|x86.ActiveCfg = Debug|Win32
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Debug|x86.Build.0 = Debug|Win32
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Release|x64.ActiveCfg = Release|x64
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Release|x64.Build.0 = Release|x64
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Release|x86.ActiveCfg = Release|Win32
-		{F2EB3052-A04A-42FC-A315-43F53EA164F5}.Release|x86.Build.0 = Release|Win32
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Debug|x64.ActiveCfg = Debug|x64
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Debug|x64.Build.0 = Debug|x64
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Debug|x86.ActiveCfg = Debug|Win32
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Debug|x86.Build.0 = Debug|Win32
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Release|x64.ActiveCfg = Release|x64
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Release|x64.Build.0 = Release|x64
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Release|x86.ActiveCfg = Release|Win32
+		{24EA3A7A-38DF-4F46-A681-112A4FF9DEFF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

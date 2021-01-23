@@ -3,6 +3,11 @@
 template <typename T>
 class Matrix
 {
+private:
+	T** matrix;
+	int width;
+	int height;
+
 public:
 	Matrix(T** _matrix, int _width, int _height)
 	{
@@ -22,8 +27,4 @@ public:
 	{
 		return height;
 	}
-private:
-	T** matrix;
-	int width;
-	int height;
 };

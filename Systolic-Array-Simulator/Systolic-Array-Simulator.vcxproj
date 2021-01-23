@@ -139,16 +139,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MAC.cpp" />
-    <ClCompile Include="MMU.cpp" />
+    <ClCompile Include="mac.cpp" />
+    <ClCompile Include="mmu.cpp" />
     <ClCompile Include="Systolic-Array-Simulator.cpp" />
     <ClCompile Include="Systolic_Setup.cpp" />
+    <ClCompile Include="Weight_FIFO.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
-    <ClInclude Include="MAC.h" />
-    <ClInclude Include="MMU.h" />
+    <ClInclude Include="mac.h" />
+    <ClInclude Include="matrix.h" />
+    <ClInclude Include="mmu.h" />
     <ClInclude Include="Systolic_Setup.h" />
+    <ClInclude Include="Weight_FIFO.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

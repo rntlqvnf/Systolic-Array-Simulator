@@ -166,6 +166,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Systolic-Array-Simulator\Systolic-Array-Simulator.vcxproj">
+      <Project>{46dd71a0-d7b6-411a-8c84-c7d8b835b288}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

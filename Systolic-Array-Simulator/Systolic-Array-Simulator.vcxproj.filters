@@ -18,21 +18,36 @@
     <ClCompile Include="Systolic-Array-Simulator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="MAC.cpp">
+    <ClCompile Include="Systolic_Setup.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="MMU.cpp">
+    <ClCompile Include="Weight_FIFO.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="mac.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="mmu.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MAC.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="MMU.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="config.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Systolic_Setup.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Weight_FIFO.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="mac.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="mmu.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

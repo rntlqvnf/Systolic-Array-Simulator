@@ -1,15 +1,10 @@
 
-#include "MAC.h"
+#include "mac.h"
 
 void MAC::tick()
 {
-	mult_and_sum();
-	output_weight = active_weight;
-	output_data = input_data;
-}
-
-void MAC::mult_and_sum()
-{
-	output_mult = (int16_t)active_weight * (int16_t)input_data;
+	output_mult = (int16_t)weight_buffer[current_weight_index] * (int16_t)input_data;
 	output_sum = input_sum + (int32_t)output_mult;
+	output_weight = weight_buffer[current_weight_index];
+	output_data = input_data;
 }
