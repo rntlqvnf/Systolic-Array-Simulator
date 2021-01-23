@@ -42,20 +42,3 @@ void MMU::assign_data_weight()
 		mac_array[0][j].set_active_weight(input_weights[j]);
 	}
 }
-
-const int32_t* MMU::get_output_sums()
-{
-	return output_sums;
-}
-
-
-MMU& MMU::set_input_datas(int8_t datas[MAT_HEIGHT])
-{
-	std::copy(datas, datas + MAT_HEIGHT, input_datas);
-	return *this;
-}
-MMU& MMU::set_input_weights(int8_t weights[MAT_WIDTH])
-{
-	std::copy(weights, weights + MAT_WIDTH, input_weights);
-	return *this;
-}

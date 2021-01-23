@@ -10,10 +10,21 @@ class MMU
 public:
 	MMU();
 	void tick();
-	const int32_t* get_output_sums();
+	const int32_t* get_output_sums()
+	{
+		return output_sums;
+	}
 
-	MMU& set_input_datas(int8_t[MAT_HEIGHT]);
-	MMU& set_input_weights(int8_t[MAT_WIDTH]);
+	MMU& set_input_datas(int8_t datas[MAT_HEIGHT])
+	{
+		std::copy(datas, datas + MAT_HEIGHT, input_datas);
+		return *this;
+	}
+	MMU& set_input_weights(int8_t weights[MAT_WIDTH])
+	{
+		std::copy(weights, weights + MAT_WIDTH, input_weights);
+		return *this;
+	}
 private:
 	void assign_data_weight();
 	void run_row_wise_calculate();
