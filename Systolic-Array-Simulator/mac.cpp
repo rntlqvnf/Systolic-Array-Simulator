@@ -5,6 +5,7 @@ void MAC::tick()
 {
 	mult_and_sum();
 	output_weight = active_weight;
+	output_data = input_data;
 }
 
 void MAC::mult_and_sum()
@@ -35,4 +36,24 @@ MAC& MAC::set_input_sum(int32_t sum)
 {
 	input_sum = sum;
 	return *this;
+}
+
+int8_t MAC::get_output_data()
+{
+	return output_data;
+}
+
+int8_t MAC::get_output_weight()
+{
+	return output_sum;
+}
+
+int16_t MAC::get_output_mult()
+{
+	return output_mult;
+}
+
+int32_t MAC::get_output_sum()
+{
+	return output_sum;
 }

@@ -15,6 +15,8 @@ public:
 	MMU& set_input_datas(int8_t[MAT_HEIGHT]);
 	MMU& set_input_weights(int8_t[MAT_WIDTH]);
 private:
+	void assign_data_weight();
+	void run_row_wise_calculate();
 	int8_t input_datas[MAT_HEIGHT];
 	int8_t input_weights[MAT_WIDTH];
 	int32_t output_sums[MAT_WIDTH];
