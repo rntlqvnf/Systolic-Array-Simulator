@@ -142,11 +142,13 @@
     <ClCompile Include="MAC.cpp" />
     <ClCompile Include="MMU.cpp" />
     <ClCompile Include="Systolic-Array-Simulator.cpp" />
+    <ClCompile Include="Systolic_Setup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="MAC.h" />
     <ClInclude Include="MMU.h" />
+    <ClInclude Include="Systolic_Setup.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
