@@ -16,6 +16,8 @@ private:
 	int16_t output_mult;
 	int32_t output_sum;
 
+	bool switch_flag;
+
 public:
 	MAC() :
 		current_weight_index(0),
@@ -25,7 +27,8 @@ public:
 		output_data(0),
 		output_weight(0),
 		output_mult(0),
-		output_sum(0)
+		output_sum(0),
+		switch_flag(false)
 	{}
 
 	void tick();
@@ -43,6 +46,11 @@ public:
 	MAC& set_input_sum(int32_t sum)
 	{
 		input_sum = sum;
+		return *this;
+	}
+	MAC& set_swtich_flag(bool flag)
+	{
+		switch_flag = flag;
 		return *this;
 	}
 	int8_t get_output_data()
