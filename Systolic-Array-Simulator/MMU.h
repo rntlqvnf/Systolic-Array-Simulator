@@ -23,7 +23,7 @@ private:
 	MAC mac_array[MAT_HEIGHT][MAT_WIDTH];
 
 public:
-	MMU() : switch_flags{}, write_flag(false), progstep(0), input_datas{}, input_weights{}, output_sums{}, mac_array{} {};
+	MMU();
 
 	void tick();
 

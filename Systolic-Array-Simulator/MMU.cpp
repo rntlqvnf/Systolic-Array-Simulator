@@ -1,6 +1,12 @@
 #include "mmu.h"
 
-MMU::MMU() : output_sums{}
+MMU::MMU() : 
+	switch_flags{},
+	write_flag(false), 
+	progstep(0), 
+	input_datas{}, 
+	input_weights{},
+	output_sums{}
 {
 	for (int i = 0; i < MAT_HEIGHT; i++)
 	{
