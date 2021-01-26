@@ -1,10 +1,15 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include <iostream>
+#include "../Systolic-Array-Simulator/Matrix.h"
 #include "../Systolic-Array-Simulator/mac.h"
 #include "../Systolic-Array-Simulator/mac.cpp"
 #include "../Systolic-Array-Simulator/mmu.h"
 #include "../Systolic-Array-Simulator/mmu.cpp"
+#include "../Systolic-Array-Simulator/Systolic_Setup.h"
+#include "../Systolic-Array-Simulator/Systolic_Setup.cpp"
+#include "../Systolic-Array-Simulator/Weight_FIFO.h"
+#include "../Systolic-Array-Simulator/Weight_FIFO.cpp"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -156,11 +161,6 @@ namespace SystolicArrayTest
 	public:
 		TEST_METHOD(ONE_MAC)
 		{
-			/* 
-			wchar_t wt[256];
-			swprintf_s(wt, L"%d", i);
-			*/
-
 			int8_t input_datas[MAT_HEIGHT] = {};
 			input_datas[MAT_HEIGHT - 1] = 10;
 
@@ -168,8 +168,8 @@ namespace SystolicArrayTest
 			input_weights[0] = 5;
 
 			bool switch_flags_false[MAT_HEIGHT];
-			std::fill(switch_flags_false, switch_flags_false + MAT_WIDTH, false);
 			bool switch_flags_true[MAT_HEIGHT];
+			std::fill(switch_flags_false, switch_flags_false + MAT_WIDTH, false);
 			std::fill(switch_flags_true, switch_flags_true + MAT_WIDTH, true);
 
 			MMU mmu;
@@ -199,8 +199,8 @@ namespace SystolicArrayTest
 			int8_t input_weights[MAT_WIDTH] = {0};
 
 			bool switch_flags_false[MAT_HEIGHT];
-			std::fill(switch_flags_false, switch_flags_false + MAT_WIDTH, false);
 			bool switch_flags_true[MAT_HEIGHT];
+			std::fill(switch_flags_false, switch_flags_false + MAT_WIDTH, false);
 			std::fill(switch_flags_true, switch_flags_true + MAT_WIDTH, true);
 
 			MMU mmu;
@@ -235,6 +235,139 @@ namespace SystolicArrayTest
 			}
 
 			Assert::AreEqual(50, mmu.get_output_sums()[0]);
+		}
+
+		TEST_METHOD(TWO_MAC)
+		{
+			int8_t input_datas[MAT_HEIGHT] = { 0 };
+			int8_t input_weights[MAT_WIDTH] = { 0 };
+
+			bool switch_flags_false[MAT_HEIGHT];
+			bool switch_flags_true[MAT_HEIGHT];
+			std::fill(switch_flags_false, switch_flags_false + MAT_WIDTH, false);
+			std::fill(switch_flags_true, switch_flags_true + MAT_WIDTH, true);
+
+			MMU mmu;
+
+			mmu.set_input_weights(input_weights)
+				.set_switch_flags(switch_flags_false)
+				.set_write_flag(true);
+
+			for (int i = 0; i < MAT_HEIGHT - 1; i++)
+			{
+				mmu.tick();
+			}
+
+			input_weights[0] = 5;
+			input_weights[1] = 10;
+			mmu.set_input_weights(input_weights);
+			mmu.tick();
+
+			input_datas[0] = 10;
+			mmu.set_input_datas(input_datas)
+				.set_switch_flags(switch_flags_true)
+				.set_write_flag(false);
+			mmu.tick();
+
+			input_datas[0] = 0;
+			mmu.set_input_datas(input_datas)
+				.set_switch_flags(switch_flags_false);
+
+			for (int i = 0; i < MAT_HEIGHT - 1; i++)
+			{
+				mmu.tick();
+			}
+
+			Assert::AreEqual(50, mmu.get_output_sums()[0]);
+
+			mmu.tick();
+
+			Assert::AreEqual(100, mmu.get_output_sums()[1]);
+		}
+	};
+
+	TEST_CLASS(SYSTOLIC_SETUP_TEST)
+	{
+	public:
+		TEST_METHOD(CONVERSION_TEST)
+		{
+			/* Must convert well (Weight stationary) */
+
+			int8_t arr[3][3] =
+			{
+				{1,2,3},
+				{0,1,0},
+				{1,4,2}
+			};
+
+			int8_t answer[3][5] =
+			{
+				{0,0,3,2,1},
+				{0,0,1,0,0},
+				{2,4,1,0,0}
+			};
+
+			Matrix<int8_t> mat(3, 3, *arr);
+
+			Systolic_Setup ss;
+			ss.set_mat_and_diagonalize(mat);
+
+			for (int i = 0; i < 5; i++)
+			{
+				ss.tick();
+				int8_t* result = ss.get_datas_to_in();
+
+				for (int j = 0; j < 3; j++)
+				{
+					wchar_t wt[256];
+					swprintf_s(wt, L"%d : %d", i, j);
+					Assert::AreEqual(answer[j][4-i], result[j], wt);
+				}
+			}
+		}
+	};
+
+	TEST_CLASS(WEIGHT_FIFO_TEST)
+	{
+	public:
+		TEST_METHOD(POP_TEST)
+		{
+			/* Must convert well (Weight stationary) */
+
+			int8_t arr[3][3] =
+			{
+				{1,2,3},
+				{0,1,0},
+				{1,4,2}
+			};
+
+
+			int8_t arr2[3][3] =
+			{
+				{5,9,3},
+				{1,1,0},
+				{1,2,2}
+			};
+
+			Matrix<int8_t> mat(3, 3, *arr);
+			Matrix<int8_t> mat2(3, 3, *arr2);
+			mat = helper::zero_padding_matrix(mat, MAT_HEIGHT, MAT_WIDTH);
+			mat2 = helper::zero_padding_matrix(mat2, MAT_HEIGHT, MAT_WIDTH);
+
+			Weight_FIFO wf;
+			wf.push(mat);
+			wf.push(mat2);
+			Matrix<int8_t> result = wf.pop();
+
+			Assert::AreEqual(mat.get_height(), result.get_height());
+			Assert::AreEqual(mat.get_width(), result.get_width());
+			for (int i = 0; i < mat.get_height(); i++)
+			{
+				for (int j = 0; j < mat.get_width(); j++)
+				{
+					Assert::AreEqual(mat.get_matrix()[i][j], result.get_matrix()[i][j]);
+				}
+			}
 		}
 	};
 }

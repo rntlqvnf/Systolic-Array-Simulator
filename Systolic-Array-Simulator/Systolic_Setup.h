@@ -20,6 +20,10 @@ public:
 		memset(diagonal_mat, 0, sizeof(int8_t) * MAT_HEIGHT * DIAG_WIDTH);
 		column_index = DIAG_WIDTH - 1;
 	}
+	int8_t* get_datas_to_in()
+	{
+		return datas_to_in;
+	}
 	void tick();
 	void set_mat_and_diagonalize(Matrix<int8_t>);
 };
