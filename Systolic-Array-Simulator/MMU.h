@@ -12,32 +12,43 @@ private:
 	void calculate_row_wise();
 	void assign_output_to_input();
 	void assign_output_sums();
+	void assign_inputs();
+
+	bool switch_flags[MAT_HEIGHT];
+	bool write_flag;
+	int progstep;
+	int8_t input_datas[MAT_HEIGHT];
+	int8_t input_weights[MAT_WIDTH];
 	int32_t output_sums[MAT_WIDTH];
 	MAC mac_array[MAT_HEIGHT][MAT_WIDTH];
 
 public:
-	MMU();
+	MMU() : switch_flags{}, write_flag(false), progstep(0), input_datas{}, input_weights{}, output_sums{}, mac_array{} {};
+
 	void tick();
-	void switch_weights();
 
 	const int32_t* get_output_sums()
 	{
 		return output_sums;
 	}
-	MMU& set_datas(int8_t datas[MAT_HEIGHT])
+	MMU& set_switch_flags(bool flags[MAT_HEIGHT])
 	{
-		for (int i = 0; i < MAT_HEIGHT; i++)
-		{
-			mac_array[i][0].set_input_data(datas[i]);
-		}
+		std::copy(flags, flags + MAT_HEIGHT, switch_flags);
 		return *this;
 	}
-	MMU& set_weights(int8_t weights[MAT_WIDTH])
+	MMU& set_write_flag(bool flag)
 	{
-		for (int j = 0; j < MAT_WIDTH; j++)
-		{
-			mac_array[0][j].set_weight(weights[j]);
-		}
+		write_flag = flag;
+		return *this;
+	}
+	MMU& set_input_datas(bool datas[MAT_HEIGHT])
+	{
+		std::copy(datas, datas + MAT_HEIGHT, input_datas);
+		return *this;
+	}
+	MMU& set_input_weights(bool weights[MAT_HEIGHT])
+	{
+		std::copy(weights, weights + MAT_WIDTH, input_weights);
 		return *this;
 	}
 };
