@@ -8,21 +8,24 @@ class MAC
 private:
 	int current_weight_index;
 
+	//in
 	int8_t input_data;
 	int8_t input_weight;
 	int8_t weight_buffer[2];
 	int input_weight_tag;
 	int32_t input_sum;
 
+	//out
 	int8_t output_data;
 	int8_t output_weight;
 	int output_weight_tag;
 	int16_t output_mult;
 	int32_t output_sum;
+	bool output_write_flag;
 
+	//control
 	bool switch_flag;
 	bool write_flag;
-
 
 	void switch_weight()
 	{
@@ -46,7 +49,8 @@ public:
 		output_sum(0),
 		output_weight_tag(0),
 		switch_flag(false),
-		write_flag(false)
+		write_flag(false),
+		output_write_flag(false)
 	{}
 
 	void tick();
@@ -66,7 +70,7 @@ public:
 		input_sum = sum;
 		return *this;
 	}
-	MAC& set_swtich_flag(bool flag)
+	MAC& set_switch_flag(bool flag)
 	{
 		switch_flag = flag;
 		return *this;
@@ -95,7 +99,7 @@ public:
 	}
 	bool get_output_write_flag()
 	{
-		return write_flag;
+		return output_write_flag;
 	}
 	int16_t get_output_mult()
 	{

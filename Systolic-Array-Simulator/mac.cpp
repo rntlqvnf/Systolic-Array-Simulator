@@ -14,4 +14,5 @@ void MAC::tick()
 	output_weight = input_weight;
 	output_weight_tag = input_weight_tag + 1;
 	output_data = input_data;
+	output_write_flag = write_flag;
 }
