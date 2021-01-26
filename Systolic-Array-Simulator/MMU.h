@@ -26,6 +26,9 @@ public:
 
 	void tick();
 
+	MAC (*getArray())[MAT_WIDTH]{
+		return mac_array;
+	}
 	const int32_t* get_output_sums()
 	{
 		for (int i = 0; i < MAT_WIDTH; i++)

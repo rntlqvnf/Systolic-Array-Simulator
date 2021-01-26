@@ -56,9 +56,14 @@ namespace helper
 	static Matrix<T> zero_padding_matrix(Matrix<T> mat, int new_height, int new_width)
 	{
 		Matrix<T> result(new_height, new_width);
+
+		for (int i = 0; i < new_height; i++)
+		{
+			std::fill(result.get_matrix()[i], result.get_matrix()[i] + new_width, 0);
+		}
+
 		for (int i = 0; i < mat.get_height(); i++)
 		{
-			std::fill(result.get_matrix()[i], result.get_matrix()[i] + new_height, 0); //zero-padding
 			for (int j = 0; j < mat.get_width(); j++)
 			{
 				result.get_matrix()[i][j] = mat.get_matrix()[i][j];

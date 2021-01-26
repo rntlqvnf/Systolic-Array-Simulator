@@ -93,6 +93,14 @@ public:
 	{
 		return output_weight;
 	}
+	int8_t get_buffer_weight()
+	{
+		return weight_buffer[1 - current_weight_index];
+	}
+	int8_t get_current_weight()
+	{
+		return weight_buffer[current_weight_index];
+	}
 	int get_output_weight_tag()
 	{
 		return output_weight_tag;
