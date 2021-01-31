@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "../Systolic-Array-Simulator-2/MAC.h"
 #include "../Systolic-Array-Simulator-2/MAC.cpp"
+#include "../Systolic-Array-Simulator-2/Systolic_Setup.h"
+#include "../Systolic-Array-Simulator-2/Systolic_Setup.cpp"
+
 
 namespace UnitTest
 {
@@ -57,5 +60,24 @@ namespace UnitTest
 		mac.calculate();
 
 		EXPECT_EQ(100, mac.sum_out) << "Calculation should be done by active weight buf";
+	}
+
+	TEST(SystolicSetupTest, OneVectorDiagonalizationTest) {
+		int matrix_size = 4;
+		Systolic_Setup ss(matrix_size);
+		Unified_Buffer ub(matrix_size, 1);
+
+		ss.ub = &ub;
+
+		for (int i = 0; i < matrix_size; i++)
+			ub.mem_block[0][i] = i + 1;
+
+		ss.write_en = true;
+		ss.program_input_vector();
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			EXPECT_EQ(ub.mem_block[0][i], ss.diagonalized_matrix[i][i]) << "Diagonalization failed in " << i;
+		}
 	}
 }
