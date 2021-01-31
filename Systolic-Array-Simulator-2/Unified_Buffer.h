@@ -15,7 +15,7 @@ public:
 		addr_size = _addr_size;
 
 		mem_block = new int8_t * [addr_size];
-		for (int i = 0; i < mat_size; i++)
+		for (int i = 0; i < addr_size; i++)
 			mem_block[i] = new int8_t[mat_size];
 	}
 

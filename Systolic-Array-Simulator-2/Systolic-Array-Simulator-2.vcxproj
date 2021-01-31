@@ -144,6 +144,7 @@
     <ClCompile Include="Systolic-Array-Simulator-2.cpp" />
     <ClCompile Include="Systolic_Setup.cpp" />
     <ClCompile Include="Unified_Buffer.cpp" />
+    <ClCompile Include="Weight_FIFO.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
@@ -151,6 +152,7 @@
     <ClInclude Include="MMU.h" />
     <ClInclude Include="Systolic_Setup.h" />
     <ClInclude Include="Unified_Buffer.h" />
+    <ClInclude Include="Weight_FIFO.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

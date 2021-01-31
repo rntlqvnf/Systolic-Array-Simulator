@@ -19,6 +19,9 @@ public:
 	//input
 	bool write_en;
 
+	//output
+	int32_t* last_row_sum;
+
 	//internal
 	MAC** mac_array;
 	int progressing;
@@ -32,6 +35,8 @@ public:
 		matrix_size = _matrix_size;
 
 		write_en = false;
+
+		last_row_sum = new int32_t[matrix_size];
 
 		mac_array = new MAC * [matrix_size];
 		for (int i = 0; i < matrix_size; i++)
@@ -50,7 +55,14 @@ public:
 		ss = NULL;
 	}
 
-	void program();
+	~MMU()
+	{
+		for (int i = 0; i < matrix_size; ++i)
+			delete[] mac_array[i];
+		delete[] mac_array;
+	}
+
+	void setup_array();
 	void calculate();
 };
 

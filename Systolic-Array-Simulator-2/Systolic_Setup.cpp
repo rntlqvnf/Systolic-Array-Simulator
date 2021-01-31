@@ -55,7 +55,7 @@ void Systolic_Setup::advance()
 		advance_internal_vector();
 		adv_count++;
 
-		if (adv_count == matrix_size)
+		if (adv_count == diag_width)
 		{
 			advancing = false;
 			adv_count = 0;
@@ -77,5 +77,5 @@ void Systolic_Setup::advance_switchs()
 void Systolic_Setup::advance_internal_vector()
 {
 	for (int i = 0; i < matrix_size; i++)
-		input_data[i] = diagonalized_matrix[adv_count][i];
+		input_data[i] = diagonalized_matrix[i][adv_count];
 }

@@ -9,9 +9,14 @@ void MMU::calculate()
 			mac_array[i][j].calculate();
 		}
 	}
+
+	for (int i = 0;i < matrix_size; i++)
+	{
+		last_row_sum[i] = mac_array[matrix_size - 1][i].sum_out;
+;	}
 }
 
-void MMU::program()
+void MMU::setup_array()
 {
 	program_input_switch();
 	program_input_data();
