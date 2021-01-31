@@ -139,7 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="MAC.cpp" />
     <ClCompile Include="Systolic-Array-Simulator-2.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MAC.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
