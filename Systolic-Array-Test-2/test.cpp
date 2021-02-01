@@ -7,6 +7,8 @@
 #include "../Systolic-Array-Simulator-2/MMU.cpp"
 #include "../Systolic-Array-Simulator-2/Weight_FIFO.h"
 #include "../Systolic-Array-Simulator-2/Weight_FIFO.cpp"
+#include "../Systolic-Array-Simulator-2/Accumulator.h"
+#include "../Systolic-Array-Simulator-2/Accumulator.cpp"
 
 void allocate_array(int8_t** &mat, int matrix_size)
 {
@@ -585,5 +587,22 @@ namespace UnitTest
 			}
 		}
 
+	}
+
+	TEST(AccumTest, ReadAndWriteTest) {
+		int matrix_size = 4;
+		Accumulator accm(matrix_size, 12);
+
+		int32_t input[4] = { 1,2,3,4 };
+
+		accm.write(input, 0);
+
+		int32_t* output;
+		output = new int32_t[4];
+		accm.read(output, 0);
+		for (int i = 0; i < matrix_size; i++)
+		{
+			EXPECT_EQ(input[i], output[i]);
+;		}
 	}
 }
