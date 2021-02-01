@@ -9,6 +9,8 @@
 #include "../Systolic-Array-Simulator-2/Weight_FIFO.cpp"
 #include "../Systolic-Array-Simulator-2/Accumulator.h"
 #include "../Systolic-Array-Simulator-2/Accumulator.cpp"
+#include "../Systolic-Array-Simulator-2/Activation.h"
+#include "../Systolic-Array-Simulator-2/Activation.cpp"
 
 void allocate_array(int8_t** &mat, int matrix_size)
 {
@@ -210,7 +212,7 @@ namespace UnitTest
 
 		ss.write_en = false;
 		ss.advance_en = true;
-		for (int i = 0; i < 2 * matrix_size - 1; i++)
+		for (int i = 0; i < (2 * matrix_size - 1) + matrix_size - 1; i++)
 		{
 			ss.advance();
 		}
@@ -604,5 +606,277 @@ namespace UnitTest
 		{
 			EXPECT_EQ(input[i], output[i]);
 ;		}
+	}
+
+	TEST(AccumTest, TwoMacAccmResultTest) {
+		int matrix_size = 2;
+		MMU mmu(matrix_size);
+		Unified_Buffer ub(matrix_size, 2);
+		Systolic_Setup ss(matrix_size);
+		Weight_FIFO wf(matrix_size);
+		Accumulator acc(matrix_size, 100);
+
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+		acc.mmu = &mmu;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			// matrix
+			// 1 2
+			// 2 3 
+			ub.mem_block[0][i] = i + 1;
+			ub.mem_block[1][i] = i + 2;
+		}
+
+		int8_t copy[2][2] =
+		{
+			{1,2},
+			{5,4}
+		};
+		int8_t** mat = NULL;
+		allocate_array(mat, matrix_size, copy[0]);
+		wf.push(mat);
+
+		for (int i = 0; i < 7; i++)
+		{
+			//Control setting
+			switch (i)
+			{
+			case 0:
+				//Systolic setup program
+				ss.write_en = true;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				break;
+			case 1:
+				//Weight FIFO advance
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = true;
+				mmu.write_en = true;
+				break;
+			case 2:
+			case 4:
+			case 5:
+			case 6:
+				//NOP
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				break;
+			case 3:
+				//Systolic Setup advance
+				ss.write_en = false;
+				ss.advance_en = true;
+				ss.switch_en = true;
+				wf.advance_en = false;
+				mmu.write_en = false;
+
+				//Setup accm addr
+				ss.accm_addr_in = 0;
+				break;
+			}
+
+			//Register update
+			ss.program();
+			ss.advance();
+			wf.advance();
+			mmu.setup_array();
+
+			//Combination Logic
+			mmu.calculate();
+
+			//Update accm
+			acc.write_results();
+
+			switch (i)
+			{
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				break;
+			case 4:
+			{
+				int answer[2] = { 5,0 };
+				int dst[2];
+				acc.read(dst, 1);
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], dst[j]) << "Accm failed in step " << i << ", " << j;
+				break;
+			}
+			case 5:
+			{
+				int answer[2] = { 8,13 };
+				int dst[2];
+				acc.read(dst, 2);
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], dst[j]) << "Accm failed in step " << i << ", " << j;
+				break;
+			}
+			case 6:
+			{
+				int answer[2] = { 0,22 };
+				int dst[2];
+				acc.read(dst, 3);
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], dst[j]) << "Accm failed in step " << i << ", " << j;
+				break;
+			}
+			}
+		}
+	}
+
+	TEST(ModuleTest, SizeTwoModuleTest) {
+		int matrix_size = 2;
+		MMU mmu(matrix_size);
+		Unified_Buffer ub(matrix_size, 2);
+		Systolic_Setup ss(matrix_size);
+		Weight_FIFO wf(matrix_size);
+		Accumulator acc(matrix_size, 100);
+		Activation act(matrix_size);
+
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+		acc.mmu = &mmu;
+		act.acc = &acc;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			// matrix
+			// 1 2
+			// 2 3 
+			ub.mem_block[0][i] = i + 1;
+			ub.mem_block[1][i] = i + 2;
+		}
+
+		int8_t copy[2][2] =
+		{
+			{1,2},
+			{5,4}
+		};
+		int8_t** mat = NULL;
+		allocate_array(mat, matrix_size, copy[0]);
+		wf.push(mat);
+
+		int accm_addr = 0;
+
+		for (int i = 0; i < 9; i++)
+		{
+			//Control setting
+			switch (i)
+			{
+			case 0:
+				//Systolic setup program
+				ss.write_en = true;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				act.act_en = false;
+				ub.write_en = false;
+
+				break;
+			case 1:
+				//Weight FIFO advance
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = true;
+				mmu.write_en = true;
+				act.act_en = false;
+				ub.write_en = false;
+
+				break;
+			case 2:
+			case 4:
+			case 5:
+			case 6:
+				//NOP
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				act.act_en = false;
+				ub.write_en = false;
+
+				break;
+			case 3:
+				//Systolic Setup advance
+				ss.write_en = false;
+				ss.advance_en = true;
+				ss.switch_en = true;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				act.act_en = false;
+				ub.write_en = false;
+
+				//Setup accm addr
+				ss.accm_addr_in = accm_addr;
+				break;
+			case 7:
+				//Activation mat write from accm
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				act.act_en = true;
+				ub.write_en = false;
+
+				//Setup accm addr
+				//addr + matrix height -1 (no data cycle)
+				act.addr = accm_addr + matrix_size - 1;
+				break;
+			case 8:
+				//Write to host mem
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				act.act_en = false;
+				ub.write_en = true;
+
+				//Setup ub addr
+				ub.addr = 0;
+				break;
+			}
+			//Register update
+			ss.program();
+			ss.advance();
+			wf.advance();
+			mmu.setup_array();
+			act.program_mat_from_accm();
+
+			//Combination Logic
+			mmu.calculate();
+
+			//Update accm
+			acc.write_results();
+			ub.write_from_accm(act.mat);
+		}
+
+		//column-wised
+		int8_t answer[2][2] =
+		{
+			{5,13},
+			{8,22}
+		};
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			EXPECT_EQ(answer[i][0], ub.mem_block[i][0]) << "Module failed " << i << ", " << 1;
+			EXPECT_EQ(answer[i][1], ub.mem_block[i][1]) << "Module failed " << i << ", " << 2;
+		}
 	}
 }

@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Accumulator.cpp" />
+    <ClCompile Include="Activation.cpp" />
     <ClCompile Include="MAC.cpp" />
     <ClCompile Include="MMU.cpp" />
     <ClCompile Include="Systolic-Array-Simulator-2.cpp" />
@@ -149,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Accumulator.h" />
+    <ClInclude Include="Activation.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="MAC.h" />
     <ClInclude Include="MMU.h" />

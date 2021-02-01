@@ -14,7 +14,6 @@ void MMU::calculate()
 	{
 		last_row_sum[i] = mac_array[matrix_size - 1][i].sum_out;
 ;	}
-	std::cout << "Calculate " << std::endl;
 }
 
 void MMU::setup_array()

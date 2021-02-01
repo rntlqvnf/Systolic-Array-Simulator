@@ -49,23 +49,19 @@ void Systolic_Setup::advance()
 		std::fill(switch_weights, switch_weights + matrix_size, false);
 	}
 
+	advance_outputs_to_accm();
+
 	if (advancing)
 	{
 		advance_switchs();
 		advance_internal_vector();
 		advance_count++;
 
-		if (advance_count == diag_width)
+		if (advance_count == diag_width + matrix_size - 1) //last input column got into last weight column
 		{
 			advancing = false;
 			advance_count = 0;
 		}
-	}
-	else
-	{
-		//Reset 0 when not advancing
-		for (int i = 0; i < matrix_size; i++)
-			input_datas[i] = 0;
 	}
 }
 
@@ -89,5 +85,11 @@ void Systolic_Setup::advance_switchs()
 void Systolic_Setup::advance_internal_vector()
 {
 	for (int i = 0; i < matrix_size; i++)
-		input_datas[i] = diagonalized_matrix[i][advance_count];
+		input_datas[i] = (advance_count >= diag_width) ? 0 : diagonalized_matrix[i][advance_count];
+}
+
+void Systolic_Setup::advance_outputs_to_accm()
+{
+	accm_write_en = advancing;
+	accm_addr_out = accm_addr_in + advance_count;
 }

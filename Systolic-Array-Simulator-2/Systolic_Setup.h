@@ -12,7 +12,7 @@ private:
 	void program_input_vector();
 	void advance_switchs();
 	void advance_internal_vector();
-
+	void advance_outputs_to_accm();
 public:
 	//setting
 	int matrix_size;
@@ -22,13 +22,16 @@ public:
 	bool write_en;
 	bool switch_en;
 	bool advance_en;
+	int accm_addr_in;
 
 	//output
 	int8_t* input_datas;
+	bool* switch_weights;
+	bool accm_write_en;
+	int accm_addr_out;
 
 	//internal
 	int8_t** diagonalized_matrix;
-	bool* switch_weights;
 	int count;
 	int advance_count;
 	bool programming;
@@ -45,9 +48,12 @@ public:
 		write_en = false;
 		switch_en = false;
 		advance_en = false;
+		accm_addr_in = 0;
 
 		input_datas = new int8_t[matrix_size];
 		std::fill(input_datas, input_datas + matrix_size, 0);
+		accm_write_en = false;
+		accm_addr_out = 0;
 
 		diagonalized_matrix = new int8_t * [matrix_size];
 		for (int i = 0; i < matrix_size; i++)

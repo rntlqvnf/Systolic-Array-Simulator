@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "MMU.h"
 
 class Accumulator
 {
@@ -9,7 +10,11 @@ public:
 	int matrix_size;
 	int addr_size;
 
+	//internal
 	int32_t** mem_block;
+
+	//other HW
+	MMU* mmu;
 
 	Accumulator(int _matrix_size, int _addr_size)
 	{
@@ -19,6 +24,21 @@ public:
 		mem_block = new int32_t * [matrix_size];
 		for (int i = 0; i < matrix_size; i++)
 			mem_block[i] = new int32_t[addr_size];
+
+		mmu = NULL;
+	}
+
+	void write_results()
+	{
+		assert(mmu != NULL);
+
+		bool write_en = mmu->ss->accm_write_en;
+		int addr = mmu->ss->accm_addr_out;
+
+		if (write_en)
+		{
+			write(mmu->last_row_sum, addr);
+		}
 	}
 
 	void write(int32_t* data,int addr)
