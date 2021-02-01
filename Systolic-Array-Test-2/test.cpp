@@ -162,12 +162,30 @@ namespace UnitTest
 		}
 
 		ss.write_en = false;
-		ss.adv_en = true;
+		ss.advance_en = true;
+		ss.switch_en = true;
 		for (int i = 0; i < 2*matrix_size-1; i++)
 		{
 			ss.advance();
-			EXPECT_EQ(answer[0][i], ss.input_data[0]) << "Advancing 1 failed in " << i;
-			EXPECT_EQ(answer[1][i], ss.input_data[1]) << "Advancing 2 failed in " << i;
+			EXPECT_EQ(answer[0][i], ss.input_datas[0]) << "Advancing 1 failed in " << i;
+			EXPECT_EQ(answer[1][i], ss.input_datas[1]) << "Advancing 2 failed in " << i;
+			if (i < matrix_size)
+			{
+				for (int j = 0; j < matrix_size; j++)
+				{
+					if(i == j)
+						EXPECT_TRUE(ss.switch_weights[j]) << "Switch " << j << " shoud be true";
+					else
+						EXPECT_FALSE(ss.switch_weights[j]) << "Switch " << j << " shoud be false";
+				}
+			}
+			else
+			{
+				for (int j = 0; j < matrix_size; j++)
+				{
+					EXPECT_FALSE(ss.switch_weights[j]) << "Over mat_size, switch " << j << "shoud be false";
+				}
+			}
 		}
 	}
 
@@ -189,7 +207,7 @@ namespace UnitTest
 		ss.program();
 
 		ss.write_en = false;
-		ss.adv_en = true;
+		ss.advance_en = true;
 		for (int i = 0; i < 2 * matrix_size - 1; i++)
 		{
 			ss.advance();
@@ -245,10 +263,327 @@ namespace UnitTest
 			wf.advance();
 			for (int j = 0; j < matrix_size; j++)
 			{
-				EXPECT_EQ(copy[matrix_size - i - 1][j], wf.input_weights[j]);
+				EXPECT_EQ(copy[j][matrix_size - i - 1], wf.input_weights[j]);
 			}
 		}
 
 		EXPECT_TRUE(wf.weight_queue.empty());
+	}
+
+	TEST(MMUTest, SetupTest) {
+		int matrix_size = 2;
+		MMU mmu(matrix_size);
+		Unified_Buffer ub(matrix_size, 2);
+		Systolic_Setup ss(matrix_size);
+		Weight_FIFO wf(matrix_size);
+
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			ub.mem_block[0][i] = i + 1;
+			ub.mem_block[1][i] = i + 2;
+		}
+
+		int8_t copy[2][2] =
+		{
+			{1,2},
+			{5,4}
+		};
+		int8_t** mat = NULL;
+		allocate_array(mat, matrix_size, copy[0]);
+		wf.push(mat);
+
+		//cycle 1
+		ss.write_en = true;
+		ss.program();
+
+		//cycle2
+		ss.program();
+
+		//cycle3
+		ss.advance_en = true;
+		ss.switch_en = true;
+		wf.advance_en = true;
+		ss.advance(); //input datas and switchs
+		wf.advance(); //input weights
+		mmu.setup_array();
+		
+		//input datas
+		//input weights
+		for (int i = 0; i < matrix_size; i++)
+		{
+			EXPECT_EQ(ss.input_datas[i], mmu.mac_array[0][i].data_in) << "Input data failed in " << i;
+			EXPECT_EQ(wf.input_weights[i], mmu.mac_array[0][i].weight_in) << "Input weight failed in " << i;
+		}
+	}
+
+	TEST(MMUTest, WeightWriteTest) {
+		int matrix_size = 2;
+		MMU mmu(matrix_size);
+		Unified_Buffer ub(matrix_size, 2);
+		Systolic_Setup ss(matrix_size);
+		Weight_FIFO wf(matrix_size);
+
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			ub.mem_block[0][i] = i + 1;
+			ub.mem_block[1][i] = i + 2;
+		}
+
+		int8_t copy[2][2] =
+		{
+			{1,2},
+			{5,4}
+		};
+		int8_t** mat = NULL;
+		allocate_array(mat, matrix_size, copy[0]);
+		wf.push(mat);
+
+		//cycle 1
+		ss.write_en = true;
+		ss.program();
+
+		//cycle2
+		ss.program();
+
+		//cycle3
+		ss.advance_en = true;
+		ss.switch_en = true;
+		wf.advance_en = true;
+		mmu.write_en = true;
+		ss.advance(); //input datas and switchs
+		wf.advance(); //input weights
+		mmu.setup_array();
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			EXPECT_EQ(wf.input_weights[i], mmu.mac_array[0][i].weight_in) << "Input weight failed in " << i;
+			EXPECT_TRUE(mmu.mac_array[0][i].write_en_in) << "Write en failed in " << i;
+			EXPECT_EQ(0, mmu.mac_array[0][i].weight_tag_in) << "Weight tag failed in " << i;
+		}
+
+		mmu.calculate();
+		mmu.setup_array();
+		mmu.calculate();
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			EXPECT_EQ(wf.input_weights[i], mmu.mac_array[1][i].weight_in) << "Input weight failed in " << i;
+			EXPECT_TRUE(mmu.mac_array[0][i].write_en_in) << "Write en failed in " << i;
+			EXPECT_EQ(1, mmu.mac_array[0][i].weight_tag_in) << "Weight tag failed in " << i;
+			EXPECT_EQ(1, mmu.mac_array[1][i].weight_tag_in) << "Weight tag failed in " << i;
+			EXPECT_EQ(wf.input_weights[i], mmu.mac_array[1][i].weight_buf[1 - mmu.mac_array[1][i].current_weight]) << "Weight write failed in " << i;
+		}
+	}
+
+	TEST(MMUTest, OneMacTest) {
+		int matrix_size = 1;
+		MMU mmu(matrix_size);
+		Unified_Buffer ub(matrix_size, 1);
+		Systolic_Setup ss(matrix_size);
+		Weight_FIFO wf(matrix_size);
+
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			// matrix
+			// 1
+			ub.mem_block[0][i] = i + 1;
+		}
+
+		int8_t copy[1][1] =
+		{
+			{2},
+		};
+		int8_t** mat = NULL;
+		allocate_array(mat, matrix_size, copy[0]);
+		wf.push(mat);
+
+		for (int i = 0; i < 3; i++)
+		{
+			//Control setting
+			switch (i)
+			{
+			case 0:
+				//Systolic setup program
+				ss.write_en = true;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				break;
+			case 1:
+				//Weight FIFO advance
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = true;
+				mmu.write_en = true;
+				break;
+			case 2:
+				//Systolic Setup advance
+				ss.write_en = false;
+				ss.advance_en = true;
+				ss.switch_en = true;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				break;
+			}
+
+			//Register update
+			ss.program();
+			ss.advance();
+			wf.advance();
+			mmu.setup_array();
+
+			//Combination Logic
+			mmu.calculate();
+
+			switch (i)
+			{
+			case 0:
+			case 1:
+			{
+				int answer[1] = { 0 };
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], mmu.last_row_sum[j]) << "Cal failed in step " << i << ", " << j;
+				break;
+			}
+			case 2:
+			{
+				int answer[1] = { 2 };
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], mmu.last_row_sum[j]) << "Cal failed in step " << i << ", " << j;
+				break;
+			}
+			}
+		}
+	}
+	TEST(MMUTest, TwoMacCalTest) {
+		int matrix_size = 2;
+		MMU mmu(matrix_size);
+		Unified_Buffer ub(matrix_size, 2);
+		Systolic_Setup ss(matrix_size);
+		Weight_FIFO wf(matrix_size);
+
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			// matrix
+			// 1 2
+			// 2 3 
+			ub.mem_block[0][i] = i + 1; 
+			ub.mem_block[1][i] = i + 2;
+		}
+
+		int8_t copy[2][2] =
+		{
+			{1,2},
+			{5,4}
+		};
+		int8_t** mat = NULL;
+		allocate_array(mat, matrix_size, copy[0]);
+		wf.push(mat);
+
+		for (int i = 0; i < 7; i++)
+		{
+			//Control setting
+			switch (i)
+			{
+			case 0:
+				//Systolic setup program
+				ss.write_en = true;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				break;
+			case 1:
+				//Weight FIFO advance
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = true;
+				mmu.write_en = true;
+				break;
+			case 2:
+			case 4:
+			case 5:
+			case 6:
+				//NOP
+				ss.write_en = false;
+				ss.advance_en = false;
+				ss.switch_en = false;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				break;
+			case 3:
+				//Systolic Setup advance
+				ss.write_en = false;
+				ss.advance_en = true;
+				ss.switch_en = true;
+				wf.advance_en = false;
+				mmu.write_en = false;
+				break;
+			}
+
+			//Register update
+			ss.program();
+			ss.advance();
+			wf.advance();
+			mmu.setup_array();
+
+			//Combination Logic
+			mmu.calculate();
+
+			switch (i)
+			{
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+			{
+				int answer[2] = { 0,0 };
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], mmu.last_row_sum[j]) << "Cal failed in step " << i << ", " << j;
+				break;
+			}
+			case 4:
+			{
+				int answer[2] = { 5,0 };
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], mmu.last_row_sum[j]) << "Cal failed in step " << i << ", " << j;
+				break;
+			}
+			case 5:
+			{
+				int answer[2] = { 8,13 };
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], mmu.last_row_sum[j]) << "Cal failed in step " << i << ", " << j;
+				break;
+			}
+			case 6:
+			{
+				int answer[2] = { 0,22 };
+				for (int j = 0; j < matrix_size; j++)
+					EXPECT_EQ(answer[j], mmu.last_row_sum[j]) << "Cal failed in step " << i << ", " << j;
+				break;
+			}
+			}
+		}
+
 	}
 }

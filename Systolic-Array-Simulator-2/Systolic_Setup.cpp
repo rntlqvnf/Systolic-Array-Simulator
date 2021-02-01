@@ -42,10 +42,10 @@ void Systolic_Setup::reset_internal_matrix()
 
 void Systolic_Setup::advance()
 {
-	if (adv_en && !advancing)
+	if (advance_en && !advancing)
 	{
 		advancing = true;
-		adv_count = 0;
+		advance_count = 0;
 		std::fill(switch_weights, switch_weights + matrix_size, false);
 	}
 
@@ -53,29 +53,41 @@ void Systolic_Setup::advance()
 	{
 		advance_switchs();
 		advance_internal_vector();
-		adv_count++;
+		advance_count++;
 
-		if (adv_count == diag_width)
+		if (advance_count == diag_width)
 		{
 			advancing = false;
-			adv_count = 0;
+			advance_count = 0;
 		}
+	}
+	else
+	{
+		//Reset 0 when not advancing
+		for (int i = 0; i < matrix_size; i++)
+			input_datas[i] = 0;
 	}
 }
 
 void Systolic_Setup::advance_switchs()
 {
-	if(adv_count == 0)
-		switch_weights[adv_count] = switch_en;
+	if (advance_count == 0)
+	{
+		switch_weights[advance_count] = switch_en;
+	}
+	else if (advance_count < matrix_size)
+	{
+		switch_weights[advance_count] = switch_weights[advance_count - 1];
+		switch_weights[advance_count - 1] = false;
+	}
 	else
 	{
-		switch_weights[adv_count] = switch_weights[adv_count - 1];
-		switch_weights[adv_count - 1] = 0;
+		std::fill(switch_weights, switch_weights + matrix_size, false);
 	}
 }
 
 void Systolic_Setup::advance_internal_vector()
 {
 	for (int i = 0; i < matrix_size; i++)
-		input_data[i] = diagonalized_matrix[i][adv_count];
+		input_datas[i] = diagonalized_matrix[i][advance_count];
 }

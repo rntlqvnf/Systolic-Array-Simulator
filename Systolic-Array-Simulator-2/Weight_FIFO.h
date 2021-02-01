@@ -27,6 +27,7 @@ public:
 		advancing = false;
 		advance_step = 0;
 		input_weights = new int8_t[matrix_size];
+		std::fill(input_weights, input_weights + matrix_size, 0);
 	}
 
 	~Weight_FIFO()

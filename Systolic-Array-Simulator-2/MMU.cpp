@@ -14,6 +14,7 @@ void MMU::calculate()
 	{
 		last_row_sum[i] = mac_array[matrix_size - 1][i].sum_out;
 ;	}
+	std::cout << "Calculate " << std::endl;
 }
 
 void MMU::setup_array()
@@ -28,7 +29,7 @@ void MMU::program_output_to_input()
 {
 	for (int i = 0; i < matrix_size; i++)
 	{
-		for (int j = 0;i < matrix_size; j++)
+		for (int j = 0;j < matrix_size; j++)
 		{
 			if (i != matrix_size - 1)
 			{
@@ -48,7 +49,7 @@ void MMU::program_input_data()
 {
 	for (int i = 0; i < matrix_size; i++)
 	{
-		mac_array[i][0].data_in = ss->input_data[i];
+		mac_array[i][0].data_in = ss->input_datas[i];
 	}
 }
 
@@ -56,7 +57,7 @@ void MMU::program_input_switch()
 {
 	for (int i = 0; i < matrix_size; i++)
 	{
-		for (int j = 0;i < matrix_size; j++)
+		for (int j = 0;j < matrix_size; j++)
 		{
 			mac_array[i][j].switch_in = ss->switch_weights[i];
 		}
@@ -67,9 +68,13 @@ void MMU::program_input_write_things()
 {
 	for (int i = 0; i < matrix_size; i++)
 	{
-		mac_array[0][i].write_en_in = write_en;
+		if(progressing)
+			mac_array[0][i].write_en_in = progressing;
+		else
+			mac_array[0][i].write_en_in = write_en;
+
 		mac_array[0][i].weight_tag_in = prog_step;
-		//TODO: weight from FIFO
+		mac_array[0][i].weight_in = wf->input_weights[i];
 	}
 	advance_write();
 }

@@ -3,6 +3,8 @@
 #include "MAC.h"
 #include "config.h"
 #include "Systolic_Setup.h"
+#include "Weight_FIFO.h"
+#include <iostream>
 
 class MMU
 {
@@ -29,6 +31,7 @@ public:
 
 	//other HW
 	Systolic_Setup* ss;
+	Weight_FIFO* wf;
 
 	MMU(int _matrix_size = MAT_SIZE)
 	{
@@ -53,6 +56,7 @@ public:
 		prog_step = 0;
 
 		ss = NULL;
+		wf = NULL;
 	}
 
 	~MMU()

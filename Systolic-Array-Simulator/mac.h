@@ -12,7 +12,7 @@ private:
 	int8_t input_data;
 	int8_t input_weight;
 	int8_t weight_buffer[2];
-	int input_weight_tag;
+	int input_weight_taginput_datas
 	int32_t input_sum;
 
 	//out

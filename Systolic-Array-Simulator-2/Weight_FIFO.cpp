@@ -27,8 +27,8 @@ void Weight_FIFO::advance()
 
 	if (advancing)
 	{
-		for (int i = 0;i < matrix_size;i++)
-			input_weights[i] = weight_queue.front()[matrix_size - advance_step - 1][i];
+		for (int i = 0;i < matrix_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
+			input_weights[i] = weight_queue.front()[i][matrix_size - advance_step - 1];
 
 		advance_step++;
 		if(advance_step == matrix_size)
