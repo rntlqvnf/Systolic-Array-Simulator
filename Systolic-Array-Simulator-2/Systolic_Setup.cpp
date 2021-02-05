@@ -1,23 +1,24 @@
 #include "Systolic_Setup.h"
 
-void Systolic_Setup::program()
+void Systolic_Setup::read_vector_from_UB()
 {
-	if (write_en && !programming)
+	if (read_en && !reading)
 	{
 		reset_internal_matrix();
-		programming = true;
-		count = 0;
+		reading = true;
+		read_count = 0;
+		ub_addr_reg = ub_addr;
 	}
 
-	if (programming)
+	if (reading)
 	{
 		program_input_vector();
-		count++;
+		read_count++;
 
-		if (count == matrix_size)
+		if (read_count == matrix_size)
 		{
-			programming = false;
-			count = 0;
+			reading = false;
+			read_count = 0;
 		}
 	}
 }
@@ -28,7 +29,7 @@ void Systolic_Setup::program_input_vector()
 
 	for (int i = 0; i < matrix_size; i++)
 	{
-		diagonalized_matrix[i][i + count] = ub->mem_block[count][i];
+		diagonalized_matrix[i][i + read_count] = ub->mem_block[ub_addr_reg = program_count][i];
 	}
 }
 
@@ -40,7 +41,7 @@ void Systolic_Setup::reset_internal_matrix()
 	}
 }
 
-void Systolic_Setup::advance()
+void Systolic_Setup::advance_vector_to_MMU()
 {
 	if (advance_en && !advancing)
 	{
@@ -90,6 +91,6 @@ void Systolic_Setup::advance_internal_vector()
 
 void Systolic_Setup::advance_outputs_to_accm()
 {
-	accm_write_en = advancing;
-	accm_addr_out = accm_addr_in + advance_count;
+	acc_write_en = advancing;
+	acc_addr_out = acc_addr_in + advance_count;
 }

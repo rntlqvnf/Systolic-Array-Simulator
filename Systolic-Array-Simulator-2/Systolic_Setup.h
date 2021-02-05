@@ -19,22 +19,24 @@ public:
 	int diag_width;
 
 	//input
-	bool write_en;
+	bool read_en;
 	bool switch_en;
 	bool advance_en;
-	int accm_addr_in;
+	int ub_addr;
+	int acc_addr_in;
 
 	//output
 	int8_t* input_datas;
 	bool* switch_weights;
-	bool accm_write_en;
-	int accm_addr_out;
+	bool acc_write_en;
+	int acc_addr_out;
 
 	//internal
 	int8_t** diagonalized_matrix;
-	int count;
+	int ub_addr_reg;
+	int read_count;
 	int advance_count;
-	bool programming;
+	bool reading;
 	bool advancing;
 
 	//other HW
@@ -45,15 +47,16 @@ public:
 		matrix_size = _matrix_size;
 		diag_width = matrix_size + matrix_size - 1;
 
-		write_en = false;
+		read_en = false;
 		switch_en = false;
 		advance_en = false;
-		accm_addr_in = 0;
+		ub_addr = 0;
+		acc_addr_in = 0;
 
 		input_datas = new int8_t[matrix_size];
 		std::fill(input_datas, input_datas + matrix_size, 0);
-		accm_write_en = false;
-		accm_addr_out = 0;
+		acc_write_en = false;
+		acc_addr_out = 0;
 
 		diagonalized_matrix = new int8_t * [matrix_size];
 		for (int i = 0; i < matrix_size; i++)
@@ -62,9 +65,10 @@ public:
 		switch_weights = new bool[matrix_size];
 		std::fill(switch_weights, switch_weights + matrix_size, false);
 
-		count = 0;
+		ub_addr_reg = 0;
+		read_count = 0;
 		advance_count = 0;
-		programming = false;
+		reading = false;
 		advancing = false;
 
 		ub = NULL;
@@ -77,7 +81,7 @@ public:
 		delete[] diagonalized_matrix;
 	}
 
-	void program();
-	void advance();
+	void read_vector_from_UB();
+	void advance_vector_to_MMU();
 };
 

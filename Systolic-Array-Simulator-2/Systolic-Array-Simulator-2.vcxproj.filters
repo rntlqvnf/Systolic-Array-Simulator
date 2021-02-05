@@ -39,6 +39,12 @@
     <ClCompile Include="Activation.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Decoder.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Host_Mem.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MAC.h">
@@ -63,6 +69,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Activation.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Decoder.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Host_Mem.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
