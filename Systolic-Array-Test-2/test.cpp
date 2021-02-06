@@ -311,6 +311,31 @@ namespace UnitTest
 		}
 	}
 
+	TEST(WeightFIFOTest, DramReadCycleTest) {
+		int matrix_size = 10;
+		Memory dram(matrix_size, 50);
+		Weight_FIFO wf(matrix_size);
+
+		wf.dram = &dram;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				dram.mem_block[i][j] = i+j;
+			}
+		}
+
+		wf.read_en = true;
+		wf.dram_addr = 0;
+
+		wf.read_matrix_from_DRAM();
+		EXPECT_TRUE(wf.weight_queue.empty());
+
+		wf.read_matrix_from_DRAM();
+		EXPECT_FALSE(wf.weight_queue.empty());
+	}
+
 	TEST(MMUTest, SetupTest) {
 		int matrix_size = 2;
 		MMU mmu(matrix_size);

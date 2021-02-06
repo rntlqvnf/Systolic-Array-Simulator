@@ -82,10 +82,8 @@ public:
 
 	void read_matrix_when_max_step(int step, int max_step, int matrix_size, int addr)
 	{
-		cout << "IN" << endl;
 		if (step == max_step - 1)
 		{
-			cout << "IN2" << endl;
 			int8_t** mat = new int8_t * [matrix_size];
 			for (int i = 0; i < matrix_size; i++)
 				mat[i] = new int8_t[matrix_size];
@@ -99,7 +97,6 @@ public:
 			}
 
 			weight_queue.push(mat);
-			cout << "PUSH " << weight_queue.front() << endl;
 		}
 	}
 
@@ -124,7 +121,7 @@ public:
 
 	void read_matrix_from_DRAM()
 	{
-		int max_count = matrix_size * matrix_size / 64 < 1 ? 1 : matrix_size * matrix_size / 64;
+		int max_count = (matrix_size * matrix_size + 64 - 1) / 64;
 		read_matrix_counter.count(max_count, matrix_size, dram_addr);
 	}
 };
