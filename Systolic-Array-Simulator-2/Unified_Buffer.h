@@ -3,14 +3,17 @@
 #include <assert.h>
 #include <stdint.h>
 #include <iostream>
-#include "Host_Mem.h"
-
-//Column-wise buffer
-//[0] = 11, 21, 31...
-//[1] = 12, 22, 32...
+#include "Memory.h"
 
 class Unified_Buffer
 {
+private:
+	//internal
+	bool reading;
+	int read_count;
+	int read_addr;
+	int hm_read_addr;
+
 public:
 	//setting
 	int addr_size;
@@ -22,16 +25,9 @@ public:
 	int addr;
 	int hm_addr;
 	bool read_en;
-	bool write_en;
-
-	//internal
-	bool reading;
-	int read_count;
-	int read_addr;
-	int hm_read_addr;
 
 	//other HW
-	Host_Mem *hm;
+	Memory *hm;
 
 	Unified_Buffer(int mat_size, int _addr_size)
 	{
@@ -45,7 +41,6 @@ public:
 		addr = 0;
 		hm_addr = 0;
 		read_en = false;
-		write_en = false;
 
 		reading = false;
 		read_count = 0;
@@ -62,7 +57,7 @@ public:
 		delete[] mem_block;
 	}
 
-	void read_vector_from_hm()
+	void read_vector_from_HM()
 	{
 		assert(hm != NULL);
 		if (read_en && !reading)
@@ -77,7 +72,7 @@ public:
 		{
 			for (int i = 0; i < matrix_size; i++)
 			{
-				mem_block[read_addr + read_count][i] = hm->mem_block[i][hm_read_addr + read_count];
+				mem_block[read_addr + read_count][i] = hm->mem_block[hm_read_addr + read_count][i];
 			}
 			read_count++;
 
@@ -85,20 +80,6 @@ public:
 			{
 				reading = false;
 				read_count = 0;
-			}
-		}
-	}
-
-	void write_from_accm(int32_t** arr)
-	{
-		if (write_en)
-		{
-			for (int i = 0; i < matrix_size; i++)
-			{
-				for (int j = 0; j < matrix_size; j++)
-				{
-					mem_block[addr + i][j] = (int8_t)arr[j][i];
-				}
 			}
 		}
 	}

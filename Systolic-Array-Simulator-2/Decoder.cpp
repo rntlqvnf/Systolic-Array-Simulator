@@ -45,14 +45,24 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 	else if (opcode == "RW")
 	{
 		//RW
+		//Read weight and advance
 		assert(parsed_inst.size() == 1);
 
 		controls["wf.advance_en"] = true;
 		controls["mmu.write_en"] = true;
 	}
-	else if (opcode == "MMC")
+	else if (opcode == "MMC.S")
 	{
-		//MMC src dst N
+		//MMC.S src dst N
+		//If switch, advance
+		assert(parsed_inst.size() == 4);
+
+		values["ub.addr"] = atoi(parsed_inst[2].c_str());
+		values["matrix_size"] = atoi(parsed_inst[3].c_str());
+	}
+	else if (opcode == "MMC.O")
+	{
+		//MMC.O src dst N
 		assert(parsed_inst.size() == 4);
 
 		values["ub.addr"] = atoi(parsed_inst[2].c_str());
@@ -82,7 +92,7 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 
 
 void Decoder::reset() {
-	controls["ss.write_en"] = false;
+	controls["ss.read_en"] = false;
 	controls["ss.advance_en"] = false;
 	controls["ss.switch_en"] = false;
 	controls["wf.advance_en"] = false;

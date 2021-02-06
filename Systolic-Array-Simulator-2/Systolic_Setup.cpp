@@ -29,7 +29,7 @@ void Systolic_Setup::program_input_vector()
 
 	for (int i = 0; i < matrix_size; i++)
 	{
-		diagonalized_matrix[i][i + read_count] = ub->mem_block[ub_addr_reg = program_count][i];
+		diagonalized_matrix[i][i + read_count] = ub->mem_block[i][ub_addr_reg + read_count];
 	}
 }
 

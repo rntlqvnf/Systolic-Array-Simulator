@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-class Host_Mem
+class Memory
 {
 private:
 	int matrix_size;
@@ -11,7 +11,7 @@ private:
 public:
 	int8_t** mem_block;
 
-	Host_Mem(int matrix_size, int addr_size)
+	Memory(int matrix_size, int addr_size)
 	{
 		this->matrix_size = matrix_size;
 		this->addr_size = addr_size;
@@ -20,7 +20,7 @@ public:
 			mem_block[i] = new int8_t[matrix_size];
 	}
 
-	~Host_Mem()
+	~Memory()
 	{
 		for (int i = 0; i < addr_size; ++i)
 			delete[] mem_block[i];

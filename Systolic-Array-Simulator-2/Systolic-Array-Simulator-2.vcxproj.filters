@@ -42,7 +42,7 @@
     <ClCompile Include="Decoder.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Host_Mem.cpp">
+    <ClCompile Include="Counter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,7 +74,10 @@
     <ClInclude Include="Decoder.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Host_Mem.h">
+    <ClInclude Include="Memory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Counter.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
