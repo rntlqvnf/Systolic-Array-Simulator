@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <stdint.h>
 #include <queue>
 #include "Memory.h"
@@ -12,13 +13,16 @@ class Weight_FIFO
 private:
 	//internal
 	Counter push_matrix_counter;
+	Counter read_matrix_counter;
 
 public:
 	//setting
 	int matrix_size;
 
 	//input
-	bool advance_en;
+	bool push_en;
+	bool read_en;
+	int dram_addr;
 
 	//output
 	int8_t* input_weights;
@@ -30,18 +34,30 @@ public:
 	Memory* dram;
 	
 	Weight_FIFO(int _matrix_size)
-		: push_matrix_counter(&advance_en, _matrix_size)
+		: 
+		push_matrix_counter(&push_en),
+		read_matrix_counter(&read_en) //64 bytes
 	{
 		matrix_size = _matrix_size;
-		advance_en = false;
+
+		read_en = false;
+		push_en = false;
+		dram_addr = 0;
+
 		input_weights = new int8_t[matrix_size];
 		std::fill(input_weights, input_weights + matrix_size, 0);
 		dram = NULL;
 
 		push_matrix_counter.addHandlers(
 			NULL,
-			bind(&Weight_FIFO::transpose_and_push, this, placeholders::_1, placeholders::_2),
+			bind(&Weight_FIFO::transpose_and_push, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
 			bind(&Weight_FIFO::pop, this)
+		);
+
+		read_matrix_counter.addHandlers(
+			NULL,
+			bind(&Weight_FIFO::read_matrix_when_max_step, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
+			NULL
 		);
 	}
 
@@ -49,8 +65,13 @@ public:
 	{
 		delete[] input_weights;
 	}
+	
+	void push(int8_t** mat)
+	{
+		weight_queue.push(mat);
+	}
 
-	void transpose_and_push(int step, int max_step)
+	void transpose_and_push(int step, int max_step, int matrix_size, int addr)
 	{
 		if (!weight_queue.empty())
 		{
@@ -59,26 +80,52 @@ public:
 		}
 	}
 
-	void push(int8_t** mat) 
+	void read_matrix_when_max_step(int step, int max_step, int matrix_size, int addr)
 	{
-		//Assume mat is matrix_sizee * matrix_size
-		weight_queue.push(mat);
+		cout << "IN" << endl;
+		if (step == max_step - 1)
+		{
+			cout << "IN2" << endl;
+			int8_t** mat = new int8_t * [matrix_size];
+			for (int i = 0; i < matrix_size; i++)
+				mat[i] = new int8_t[matrix_size];
+
+			for (int i = 0; i < matrix_size; i++)
+			{
+				for (int j = 0; j < matrix_size; j++)
+				{
+					mat[i][j] = dram->mem_block[addr + i][j];
+				}
+			}
+
+			weight_queue.push(mat);
+			cout << "PUSH " << weight_queue.front() << endl;
+		}
 	}
 
 	void pop()
 	{
-		int8_t** mat_to_remove = weight_queue.front();
+		if (!weight_queue.empty())
+		{
+			int8_t** mat_to_remove = weight_queue.front();
 
-		weight_queue.pop();
+			weight_queue.pop();
 
-		for (int i = 0; i < matrix_size; ++i)
-			delete[] mat_to_remove[i];
-		delete[] mat_to_remove;
+			for (int i = 0; i < matrix_size; ++i)
+				delete[] mat_to_remove[i];
+			delete[] mat_to_remove;
+		}
 	}
 
-	void push_to_MMU()
+	void push_weight_vector_to_MMU()
 	{
-		push_matrix_counter.count();
+		push_matrix_counter.count(matrix_size, matrix_size, 0);
+	}
+
+	void read_matrix_from_DRAM()
+	{
+		int max_count = matrix_size * matrix_size / 64 < 1 ? 1 : matrix_size * matrix_size / 64;
+		read_matrix_counter.count(max_count, matrix_size, dram_addr);
 	}
 };
 

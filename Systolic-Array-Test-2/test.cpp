@@ -265,10 +265,10 @@ namespace UnitTest
 
 		wf.push(mat);
 
-		wf.advance_en = true;
+		wf.push_en = true;
 		for (int i = 0; i < matrix_size; i++)
 		{
-			wf.push_to_MMU();
+			wf.push_weight_vector_to_MMU();
 			for (int j = 0; j < matrix_size; j++)
 			{
 				EXPECT_EQ(copy[j][matrix_size - i - 1], wf.input_weights[j]);
@@ -276,6 +276,39 @@ namespace UnitTest
 		}
 
 		EXPECT_TRUE(wf.weight_queue.empty());
+	}
+
+	TEST(WeightFIFOTest, DramReadTest) {
+		int matrix_size = 2;
+		Memory dram(matrix_size, 50);
+		Weight_FIFO wf(matrix_size);
+
+		wf.dram = &dram;
+
+		int8_t copy[2][2] =
+		{
+			{1,2},
+			{5,4}
+		};
+		for (int i = 0; i < matrix_size; i++)
+		{
+			dram.mem_block[0][i] = copy[0][i];
+			dram.mem_block[1][i] = copy[1][i];
+		}
+
+		wf.read_en = true;
+		wf.push_en = true;
+
+		wf.dram_addr = 0;
+		for (int i = 0; i < matrix_size; i++)
+		{
+			wf.read_matrix_from_DRAM();
+			wf.push_weight_vector_to_MMU();
+			for (int j = 0; j < matrix_size; j++)
+			{
+				EXPECT_EQ(copy[j][matrix_size - i - 1], wf.input_weights[j]);
+			}
+		}
 	}
 
 	TEST(MMUTest, SetupTest) {
@@ -314,9 +347,9 @@ namespace UnitTest
 		//cycle3
 		ss.advance_en = true;
 		ss.switch_en = true;
-		wf.advance_en = true;
+		wf.push_en = true;
 		ss.advance_vector_to_MMU(); //input datas and switchs
-		wf.push_to_MMU(); //input weights
+		wf.push_weight_vector_to_MMU(); //input weights
 		mmu.setup_array();
 		
 		//input datas
@@ -364,10 +397,10 @@ namespace UnitTest
 		//cycle3
 		ss.advance_en = true;
 		ss.switch_en = true;
-		wf.advance_en = true;
+		wf.push_en = true;
 		mmu.write_en = true;
 		ss.advance_vector_to_MMU(); //input datas and switchs
-		wf.push_to_MMU(); //input weights
+		wf.push_weight_vector_to_MMU(); //input weights
 		mmu.setup_array();
 
 		for (int i = 0; i < matrix_size; i++)
@@ -427,7 +460,7 @@ namespace UnitTest
 				ss.read_en = true;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				break;
 			case 1:
@@ -435,7 +468,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = true;
+				wf.push_en = true;
 				mmu.write_en = true;
 				break;
 			case 2:
@@ -443,7 +476,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = true;
 				ss.switch_en = true;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				break;
 			}
@@ -451,7 +484,7 @@ namespace UnitTest
 			//Register update
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_to_MMU();
+			wf.push_weight_vector_to_MMU();
 			mmu.setup_array();
 
 			//Combination Logic
@@ -516,7 +549,7 @@ namespace UnitTest
 				ss.read_en = true;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				break;
 			case 1:
@@ -524,7 +557,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = true;
+				wf.push_en = true;
 				mmu.write_en = true;
 				break;
 			case 2:
@@ -535,7 +568,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				break;
 			case 3:
@@ -543,7 +576,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = true;
 				ss.switch_en = true;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				break;
 			}
@@ -551,7 +584,7 @@ namespace UnitTest
 			//Register update
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_to_MMU();
+			wf.push_weight_vector_to_MMU();
 			mmu.setup_array();
 
 			//Combination Logic
@@ -653,7 +686,7 @@ namespace UnitTest
 				ss.read_en = true;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				break;
 			case 1:
@@ -661,7 +694,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = true;
+				wf.push_en = true;
 				mmu.write_en = true;
 				break;
 			case 2:
@@ -672,7 +705,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				break;
 			case 3:
@@ -680,7 +713,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = true;
 				ss.switch_en = true;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 
 				//Setup accm addr
@@ -691,7 +724,7 @@ namespace UnitTest
 			//Register update
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_to_MMU();
+			wf.push_weight_vector_to_MMU();
 			mmu.setup_array();
 
 			//Combination Logic
@@ -787,7 +820,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				act.act_en = false;
 				ub.read_en = true;
@@ -799,7 +832,7 @@ namespace UnitTest
 				ss.read_en = true;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				act.act_en = false;
 				ub.read_en = false;
@@ -810,7 +843,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = true;
+				wf.push_en = true;
 				mmu.write_en = true;
 				act.act_en = false;
 				ub.read_en = false;
@@ -825,7 +858,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				act.act_en = false;
 				ub.read_en = false;
@@ -836,7 +869,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = true;
 				ss.switch_en = true;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				act.act_en = false;
 				ub.read_en = false;
@@ -849,7 +882,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				act.act_en = true;
 				ub.read_en = false;
@@ -864,7 +897,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.advance_en = false;
 				ss.switch_en = false;
-				wf.advance_en = false;
+				wf.push_en = false;
 				mmu.write_en = false;
 				act.act_en = false;
 				ub.read_en = false;
@@ -877,7 +910,7 @@ namespace UnitTest
 			ub.read_vector_from_HM();
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_to_MMU();
+			wf.push_weight_vector_to_MMU();
 			mmu.setup_array();
 			act.do_activation_and_write_to_UB();
 
