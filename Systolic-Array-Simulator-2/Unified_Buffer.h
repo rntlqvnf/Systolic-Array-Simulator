@@ -12,11 +12,6 @@ private:
 	//internal
 	Counter read_vector_counter;
 
-	bool reading;
-	int read_count;
-	int read_addr;
-	int hm_read_addr;
-
 public:
 	//setting
 	int addr_size;
@@ -46,12 +41,15 @@ public:
 		hm_addr = 0;
 		read_en = false;
 
-		reading = false;
-		read_count = 0;
-		read_addr = 0;
-		hm_read_addr = 0;
-
 		hm = NULL;
+
+		read_vector_counter.addHandlers(
+			NULL,
+			NULL,
+			NULL,
+			bind(&Unified_Buffer::read_vector_from_HM, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5),
+			NULL
+		);
 	}
 
 	~Unified_Buffer()
@@ -61,31 +59,18 @@ public:
 		delete[] mem_block;
 	}
 
-	void read_vector_from_HM()
+	void read_vector_when_enable()
 	{
 		assert(hm != NULL);
 
-		if (read_en && !reading)
-		{
-			reading = true;
-			read_count = 0;
-			read_addr = addr;
-			hm_read_addr = hm_addr;
-		}
+		read_vector_counter.count(matrix_size, matrix_size, addr, hm_addr);
+	}
 
-		if (reading)
+	void read_vector_from_HM(int step, int max_step, int matrix_size, int read_addr, int hm_read_addr)
+	{
+		for (int i = 0; i < matrix_size; i++)
 		{
-			for (int i = 0; i < matrix_size; i++)
-			{
-				mem_block[read_addr + read_count][i] = hm->mem_block[hm_read_addr + read_count][i];
-			}
-			read_count++;
-
-			if (read_count == matrix_size)
-			{
-				reading = false;
-				read_count = 0;
-			}
+			mem_block[read_addr + step][i] = hm->mem_block[hm_read_addr + step][i];
 		}
 	}
 };

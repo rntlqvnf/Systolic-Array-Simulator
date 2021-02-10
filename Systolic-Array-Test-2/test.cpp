@@ -268,7 +268,7 @@ namespace UnitTest
 		wf.push_en = true;
 		for (int i = 0; i < matrix_size; i++)
 		{
-			wf.push_weight_vector_to_MMU();
+			wf.push_weight_vector_to_MMU_when_en();
 			for (int j = 0; j < matrix_size; j++)
 			{
 				EXPECT_EQ(copy[j][matrix_size - i - 1], wf.input_weights[j]);
@@ -302,8 +302,8 @@ namespace UnitTest
 		wf.dram_addr = 0;
 		for (int i = 0; i < matrix_size; i++)
 		{
-			wf.read_matrix_from_DRAM();
-			wf.push_weight_vector_to_MMU();
+			wf.read_matrix_from_DRAM_when_en();
+			wf.push_weight_vector_to_MMU_when_en();
 			for (int j = 0; j < matrix_size; j++)
 			{
 				EXPECT_EQ(copy[j][matrix_size - i - 1], wf.input_weights[j]);
@@ -329,10 +329,10 @@ namespace UnitTest
 		wf.read_en = true;
 		wf.dram_addr = 0;
 
-		wf.read_matrix_from_DRAM();
+		wf.read_matrix_from_DRAM_when_en();
 		EXPECT_TRUE(wf.weight_queue.empty());
 
-		wf.read_matrix_from_DRAM();
+		wf.read_matrix_from_DRAM_when_en();
 		EXPECT_FALSE(wf.weight_queue.empty());
 	}
 
@@ -385,7 +385,7 @@ namespace UnitTest
 		ss.switch_en = true;
 		wf.push_en = true;
 		ss.advance_vector_to_MMU(); //input datas and switchs
-		wf.push_weight_vector_to_MMU(); //input weights
+		wf.push_weight_vector_to_MMU_when_en(); //input weights
 		mmu.setup_array();
 		
 		//input datas
@@ -436,7 +436,7 @@ namespace UnitTest
 		wf.push_en = true;
 		mmu.write_en = true;
 		ss.advance_vector_to_MMU(); //input datas and switchs
-		wf.push_weight_vector_to_MMU(); //input weights
+		wf.push_weight_vector_to_MMU_when_en(); //input weights
 		mmu.setup_array();
 
 		for (int i = 0; i < matrix_size; i++)
@@ -520,7 +520,7 @@ namespace UnitTest
 			//Register update
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_weight_vector_to_MMU();
+			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 
 			//Combination Logic
@@ -620,7 +620,7 @@ namespace UnitTest
 			//Register update
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_weight_vector_to_MMU();
+			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 
 			//Combination Logic
@@ -760,7 +760,7 @@ namespace UnitTest
 			//Register update
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_weight_vector_to_MMU();
+			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 
 			//Combination Logic
@@ -943,10 +943,10 @@ namespace UnitTest
 				break;
 			}
 			//Register update
-			ub.read_vector_from_HM();
+			ub.read_vector_when_enable();
 			ss.read_vector_from_UB();
 			ss.advance_vector_to_MMU();
-			wf.push_weight_vector_to_MMU();
+			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 			act.do_activation_and_write_to_UB();
 

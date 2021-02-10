@@ -118,12 +118,12 @@ public:
 		}
 	}
 
-	void push_weight_vector_to_MMU()
+	void push_weight_vector_to_MMU_when_en()
 	{
 		push_matrix_counter.count(matrix_size, matrix_size, 0, 0);
 	}
 
-	void read_matrix_from_DRAM()
+	void read_matrix_from_DRAM_when_en()
 	{
 		int max_count = (matrix_size * matrix_size + 64 - 1) / 64;
 		read_matrix_counter.count(max_count, matrix_size, dram_addr, 0);
