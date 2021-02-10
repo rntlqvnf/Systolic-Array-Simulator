@@ -15,6 +15,34 @@ private:
 	Counter push_matrix_counter;
 	Counter read_matrix_counter;
 
+	void transpose_and_push(int step, int max_step, int matrix_size, int addr)
+	{
+		if (!weight_queue.empty())
+		{
+			for (int i = 0;i < matrix_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
+				input_weights[i] = weight_queue.front()[i][max_step - step - 1];
+		}
+	}
+
+	void read_matrix_when_max_step(int step, int max_step, int matrix_size, int addr)
+	{
+		if (step == max_step - 1)
+		{
+			int8_t** mat = new int8_t * [matrix_size];
+			for (int i = 0; i < matrix_size; i++)
+				mat[i] = new int8_t[matrix_size];
+
+			for (int i = 0; i < matrix_size; i++)
+			{
+				for (int j = 0; j < matrix_size; j++)
+				{
+					mat[i][j] = dram->mem_block[addr + i][j];
+				}
+			}
+
+			weight_queue.push(mat);
+		}
+	}
 public:
 	//setting
 	int matrix_size;
@@ -73,35 +101,6 @@ public:
 	void push(int8_t** mat)
 	{
 		weight_queue.push(mat);
-	}
-
-	void transpose_and_push(int step, int max_step, int matrix_size, int addr)
-	{
-		if (!weight_queue.empty())
-		{
-			for (int i = 0;i < matrix_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
-				input_weights[i] = weight_queue.front()[i][max_step - step - 1];
-		}
-	}
-
-	void read_matrix_when_max_step(int step, int max_step, int matrix_size, int addr)
-	{
-		if (step == max_step - 1)
-		{
-			int8_t** mat = new int8_t * [matrix_size];
-			for (int i = 0; i < matrix_size; i++)
-				mat[i] = new int8_t[matrix_size];
-
-			for (int i = 0; i < matrix_size; i++)
-			{
-				for (int j = 0; j < matrix_size; j++)
-				{
-					mat[i][j] = dram->mem_block[addr + i][j];
-				}
-			}
-
-			weight_queue.push(mat);
-		}
 	}
 
 	void pop()

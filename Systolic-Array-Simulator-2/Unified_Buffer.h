@@ -12,6 +12,14 @@ private:
 	//internal
 	Counter read_vector_counter;
 
+	void read_vector_from_HM(int step, int max_step, int matrix_size, int read_addr, int hm_read_addr)
+	{
+		for (int i = 0; i < matrix_size; i++)
+		{
+			mem_block[read_addr + step][i] = hm->mem_block[hm_read_addr + step][i];
+		}
+	}
+
 public:
 	//setting
 	int addr_size;
@@ -27,11 +35,11 @@ public:
 	//other HW
 	Memory *hm;
 
-	Unified_Buffer(int mat_size, int _addr_size)
+	Unified_Buffer(int matrix_size, int addr_size)
 		:read_vector_counter(&read_en)
 	{
-		addr_size = _addr_size;
-		matrix_size = mat_size;
+		this->addr_size = addr_size; //col size
+		this->matrix_size = matrix_size; //row size
 
 		mem_block = new int8_t * [addr_size];
 		for (int i = 0; i < addr_size; i++)
@@ -64,14 +72,6 @@ public:
 		assert(hm != NULL);
 
 		read_vector_counter.count(matrix_size, matrix_size, addr, hm_addr);
-	}
-
-	void read_vector_from_HM(int step, int max_step, int matrix_size, int read_addr, int hm_read_addr)
-	{
-		for (int i = 0; i < matrix_size; i++)
-		{
-			mem_block[read_addr + step][i] = hm->mem_block[hm_read_addr + step][i];
-		}
 	}
 };
 

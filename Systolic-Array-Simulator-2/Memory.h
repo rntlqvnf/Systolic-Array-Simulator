@@ -5,24 +5,24 @@
 class Memory
 {
 private:
-	int matrix_size;
-	int addr_size;
+	int row_size;
+	int col_size;
 
 public:
 	int8_t** mem_block;
 
-	Memory(int matrix_size, int addr_size)
+	Memory(int row_size, int col_size)
 	{
-		this->matrix_size = matrix_size;
-		this->addr_size = addr_size;
-		mem_block = new int8_t * [addr_size];
-		for (int i = 0; i < addr_size; i++)
-			mem_block[i] = new int8_t[matrix_size];
+		this->row_size = row_size;
+		this->col_size = col_size;
+		mem_block = new int8_t * [col_size];
+		for (int i = 0; i < col_size; i++)
+			mem_block[i] = new int8_t[row_size];
 	}
 
 	~Memory()
 	{
-		for (int i = 0; i < addr_size; ++i)
+		for (int i = 0; i < col_size; ++i)
 			delete[] mem_block[i];
 		delete[] mem_block;
 	}

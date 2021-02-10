@@ -344,7 +344,44 @@ namespace UnitTest
 
 		ub.hm = &hm;
 
+		//push matrix in Host memory
+		for (int i = 0; i < matrix_size; i++)
+		{
+			// 1 2
+			// 3 4
+			hm.mem_block[0][i] = i + 1;
+			hm.mem_block[1][i] = i + 3;
+		}
 
+		ub.addr = 1;
+		ub.hm_addr = 0;
+		ub.read_en = true;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			ub.read_vector_when_enable();
+		}
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				EXPECT_EQ(ub.mem_block[1 + i][j], hm.mem_block[i][j]) << "Unified Buffer Read failed in " << i << ", " << j;
+			}
+		}
+
+		ub.hm_addr = 3;
+		ub.read_en = false;
+		hm.mem_block[3][0] = 100;
+		ub.read_vector_when_enable();
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				EXPECT_EQ(ub.mem_block[1 + i][j], hm.mem_block[i][j]) << "No read when false " << i << ", " << j;
+			}
+		}
 	}
 
 	TEST(MMUTest, SetupTest) {
