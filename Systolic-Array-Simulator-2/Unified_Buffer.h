@@ -4,11 +4,14 @@
 #include <stdint.h>
 #include <iostream>
 #include "Memory.h"
+#include "Counter.h"
 
 class Unified_Buffer
 {
 private:
 	//internal
+	Counter read_vector_counter;
+
 	bool reading;
 	int read_count;
 	int read_addr;
@@ -30,6 +33,7 @@ public:
 	Memory *hm;
 
 	Unified_Buffer(int mat_size, int _addr_size)
+		:read_vector_counter(&read_en)
 	{
 		addr_size = _addr_size;
 		matrix_size = mat_size;
@@ -60,6 +64,7 @@ public:
 	void read_vector_from_HM()
 	{
 		assert(hm != NULL);
+
 		if (read_en && !reading)
 		{
 			reading = true;

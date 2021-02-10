@@ -92,16 +92,18 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 
 
 void Decoder::reset() {
+	controls["wf.push_en"] = false;
+	controls["wf.read_en"] = false;
+	controls["ub.read_en"] = false;
+	controls["ub.write_en"] = false;
 	controls["ss.read_en"] = false;
 	controls["ss.advance_en"] = false;
 	controls["ss.switch_en"] = false;
-	controls["wf.push_en"] = false;
 	controls["mmu.write_en"] = false;
 	controls["act.act_en"] = false;
-	controls["ub.read_en"] = false;
-	controls["ub.write_en"] = false;
 	controls["halt"] = false;
 
+	values["wf.dram_addr"] = 0;
 	values["ub.hm_addr"] = 0;
 	values["ub.addr"] = 0;
 	values["ss.acc_addr"] = 0;

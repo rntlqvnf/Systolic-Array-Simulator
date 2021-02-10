@@ -336,6 +336,17 @@ namespace UnitTest
 		EXPECT_FALSE(wf.weight_queue.empty());
 	}
 
+	TEST(UnifiedBufferTest, ReadHMTest)
+	{
+		int matrix_size = 2;
+		Memory hm(matrix_size, 10);
+		Unified_Buffer ub(matrix_size, 10);
+
+		ub.hm = &hm;
+
+
+	}
+
 	TEST(MMUTest, SetupTest) {
 		int matrix_size = 2;
 		MMU mmu(matrix_size);
