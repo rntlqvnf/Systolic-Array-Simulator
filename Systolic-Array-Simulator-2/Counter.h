@@ -10,7 +10,8 @@ class Counter
 private:
 	bool* enable;
 
-	function<void(void)> on_start;
+	function<void(void)> on_start_without_matrix_size;
+	function<void(int)> on_start_with_matrix_size;
 	function<void(int, int, int)> on_count_without_addr;
 	function<void(int, int, int, int)> on_count_with_one_addr;
 	function<void(int, int, int, int, int)> on_count_with_two_addr;
@@ -30,7 +31,8 @@ public:
 	{
 		this->enable = enable;
 		this->max_count = 0;
-		this->on_start = NULL;
+		this->on_start_without_matrix_size = NULL;
+		this->on_start_with_matrix_size = NULL;
 		this->on_count_without_addr = NULL;
 		this->on_count_with_one_addr = NULL;
 		this->on_count_with_two_addr = NULL;
@@ -43,13 +45,15 @@ public:
 	}
 
 	void addHandlers(
-		function<void(void)> on_start, 
+		function<void(void)> on_start_without_matrix_size,
+		function<void(int)> on_start_with_matrix_size,
 		function<void(int, int, int)> on_count_without_addr,
 		function<void(int, int, int, int)> on_count_with_one_addr,
 		function<void(int, int, int, int, int)> on_count_with_two_addr,
 		function<void(void)> on_end)
 	{
-		this->on_start = on_start;
+		this->on_start_without_matrix_size = on_start_without_matrix_size;
+		this->on_start_with_matrix_size = on_start_with_matrix_size;
 		this->on_count_without_addr = on_count_without_addr;
 		this->on_count_with_one_addr = on_count_with_one_addr;
 		this->on_count_with_two_addr = on_count_with_two_addr;
@@ -67,8 +71,12 @@ public:
 
 			counting = true;
 			count_step = 0;
-			if(on_start != NULL)
-				on_start();
+
+			if(on_start_without_matrix_size != NULL)
+				on_start_without_matrix_size();
+
+			if (on_start_with_matrix_size != NULL)
+				on_start_with_matrix_size(matrix_size);
 		}
 
 		if (counting)

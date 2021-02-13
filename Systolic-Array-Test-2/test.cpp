@@ -9,6 +9,8 @@
 #include "../Systolic-Array-Simulator-2/Weight_FIFO.cpp"
 #include "../Systolic-Array-Simulator-2/Accumulator.h"
 #include "../Systolic-Array-Simulator-2/Accumulator.cpp"
+#include "../Systolic-Array-Simulator-2/Unified_Buffer.h"
+#include "../Systolic-Array-Simulator-2/Unified_Buffer.cpp"
 #include "../Systolic-Array-Simulator-2/Activation.h"
 #include "../Systolic-Array-Simulator-2/Activation.cpp"
 #include "../Systolic-Array-Simulator-2/Memory.h"
@@ -95,48 +97,48 @@ namespace UnitTest
 	TEST(SystolicSetupTest, OneVectorDiagonalizationTest) {
 		int matrix_size = 4;
 		Systolic_Setup ss(matrix_size);
-		Unified_Buffer ub(matrix_size, 1);
+		Unified_Buffer ub(matrix_size, matrix_size);
 
 		ss.ub = &ub;
 
 		for (int i = 0; i < matrix_size; i++)
-			ub.mem_block[0][i] = i + 1;
+			ub.mem_block[i][0] = i + 1;
 
 		ss.read_en = true;
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
 
 		for (int i = 0; i < matrix_size; i++)
 		{
-			EXPECT_EQ(ub.mem_block[0][i], ss.diagonalized_matrix[i][i]) << "Diagonalization failed in " << i;
+			EXPECT_EQ(ub.mem_block[i][0], ss.diagonalized_matrix[i][i]) << "Diagonalization failed in " << i;
 		}
 	}
 
 	TEST(SystolicSetupTest, TwoVectorDiagonalizationTest) {
 		int matrix_size = 4;
 		Systolic_Setup ss(matrix_size);
-		Unified_Buffer ub(matrix_size, 2);
+		Unified_Buffer ub(matrix_size, matrix_size);
 
 		ss.ub = &ub;
 
 		for (int i = 0; i < matrix_size; i++)
-			ub.mem_block[0][i] = i + 1;
-
-		for (int i = 0; i < matrix_size; i++)
-			ub.mem_block[1][i] = i + 2;
+		{
+			ub.mem_block[i][0] = i + 1;
+			ub.mem_block[i][1] = i + 2;
+		}
 
 		ss.ub_addr = 0;
 		ss.read_en = true;
-		ss.read_vector_from_UB();
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
 
 		for (int i = 0; i < matrix_size; i++)
 		{
-			EXPECT_EQ(ub.mem_block[0][i], ss.diagonalized_matrix[i][i]) << "Diagonalization 1 failed in " << i;
-			EXPECT_EQ(ub.mem_block[1][i], ss.diagonalized_matrix[i][i+1]) << "Diagonalization 2 failed in " << i;
+			EXPECT_EQ(ub.mem_block[i][0], ss.diagonalized_matrix[i][i]) << "Diagonalization 1 failed in " << i;
+			EXPECT_EQ(ub.mem_block[i][1], ss.diagonalized_matrix[i][i+1]) << "Diagonalization 2 failed in " << i;
 		}
 	}
 
-	TEST(SystolicSetupTest, AdvanceTest) {
+	TEST(SystolicSetupTest, PushTest) {
 		int matrix_size = 2;
 		Systolic_Setup ss(matrix_size);
 		Unified_Buffer ub(matrix_size, 2);
@@ -144,10 +146,10 @@ namespace UnitTest
 		ss.ub = &ub;
 
 		for (int i = 0; i < matrix_size; i++)
-			ub.mem_block[0][i] = i + 1;
-
-		for (int i = 0; i < matrix_size; i++)
-			ub.mem_block[1][i] = i + 2;
+		{
+			ub.mem_block[i][0] = i + 1;
+			ub.mem_block[i][1] = i + 2;
+		}
 
 		int8_t answer[2][3] =
 		{
@@ -157,8 +159,8 @@ namespace UnitTest
 
 		ss.ub_addr = 0;
 		ss.read_en = true;
-		ss.read_vector_from_UB();
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
 
 		for (int i = 0; i < matrix_size; i++)
 		{
@@ -169,11 +171,11 @@ namespace UnitTest
 		}
 
 		ss.read_en = false;
-		ss.advance_en = true;
+		ss.push_en = true;
 		ss.switch_en = true;
-		for (int i = 0; i < 2*matrix_size-1; i++)
+		for (int i = 0; i < DIAG_WIDTH(matrix_size); i++)
 		{
-			ss.advance_vector_to_MMU();
+			ss.push_vectors_to_MMU_when_enable();
 			EXPECT_EQ(answer[0][i], ss.input_datas[0]) << "Advancing 1 failed in " << i;
 			EXPECT_EQ(answer[1][i], ss.input_datas[1]) << "Advancing 2 failed in " << i;
 			if (i < matrix_size)
@@ -196,7 +198,7 @@ namespace UnitTest
 		}
 	}
 
-	TEST(SystolicSetupTest, AdvanceStopTest) {
+	TEST(SystolicSetupTest, PushStopTest) {
 		int matrix_size = 2;
 		Systolic_Setup ss(matrix_size);
 		Unified_Buffer ub(matrix_size, 2);
@@ -204,23 +206,30 @@ namespace UnitTest
 		ss.ub = &ub;
 
 		for (int i = 0; i < matrix_size; i++)
-			ub.mem_block[0][i] = i + 1;
-
-		for (int i = 0; i < matrix_size; i++)
-			ub.mem_block[1][i] = i + 2;
+		{
+			ub.mem_block[i][0] = i + 1;
+			ub.mem_block[i][1] = i + 2;
+		}
 
 		ss.ub_addr = 0;
 		ss.read_en = true;
-		ss.read_vector_from_UB();
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
 
 		ss.read_en = false;
-		ss.advance_en = true;
-		for (int i = 0; i < (2 * matrix_size - 1) + matrix_size - 1; i++)
+		ss.push_en = true;
+		for (int i = 0; i < DIAG_WIDTH(matrix_size); i++)
 		{
-			ss.advance_vector_to_MMU();
+			ss.push_vectors_to_MMU_when_enable();
 		}
-		EXPECT_FALSE(ss.advancing);
+
+		EXPECT_EQ(0, ss.diagonalized_matrix[0][DIAG_WIDTH(matrix_size) - 1]);
+		EXPECT_EQ(3, ss.diagonalized_matrix[1][DIAG_WIDTH(matrix_size) - 1]);
+
+		ss.push_vectors_to_MMU_when_enable();
+
+		EXPECT_EQ(0, ss.diagonalized_matrix[0][DIAG_WIDTH(matrix_size) - 1]);
+		EXPECT_EQ(3, ss.diagonalized_matrix[1][DIAG_WIDTH(matrix_size) - 1]);
 	}
 
 	TEST(WeightFIFOTest, PushPopTest) {
@@ -359,7 +368,7 @@ namespace UnitTest
 
 		for (int i = 0; i < matrix_size; i++)
 		{
-			ub.read_vector_when_enable();
+			ub.read_vector_from_HM_when_enable();
 		}
 
 		for (int i = 0; i < matrix_size; i++)
@@ -373,7 +382,7 @@ namespace UnitTest
 		ub.hm_addr = 3;
 		ub.read_en = false;
 		hm.mem_block[3][0] = 100;
-		ub.read_vector_when_enable();
+		ub.read_vector_from_HM_when_enable();
 
 		for (int i = 0; i < matrix_size; i++)
 		{
@@ -412,16 +421,16 @@ namespace UnitTest
 
 		//cycle 1
 		ss.read_en = true;
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
 
 		//cycle2
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
 
 		//cycle3
-		ss.advance_en = true;
+		ss.push_en = true;
 		ss.switch_en = true;
 		wf.push_en = true;
-		ss.advance_vector_to_MMU(); //input datas and switchs
+		ss.push_vectors_to_MMU_when_enable(); //input datas and switchs
 		wf.push_weight_vector_to_MMU_when_en(); //input weights
 		mmu.setup_array();
 		
@@ -462,17 +471,17 @@ namespace UnitTest
 
 		//cycle 1
 		ss.read_en = true;
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
 
 		//cycle2
-		ss.read_vector_from_UB();
+		ss.read_vector_from_UB_when_enable();
 
 		//cycle3
-		ss.advance_en = true;
+		ss.push_en = true;
 		ss.switch_en = true;
 		wf.push_en = true;
 		mmu.write_en = true;
-		ss.advance_vector_to_MMU(); //input datas and switchs
+		ss.push_vectors_to_MMU_when_enable(); //input datas and switchs
 		wf.push_weight_vector_to_MMU_when_en(); //input weights
 		mmu.setup_array();
 
@@ -531,7 +540,7 @@ namespace UnitTest
 			case 0:
 				//Systolic setup program
 				ss.read_en = true;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -539,7 +548,7 @@ namespace UnitTest
 			case 1:
 				//Weight FIFO advance
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = true;
 				mmu.write_en = true;
@@ -547,7 +556,7 @@ namespace UnitTest
 			case 2:
 				//Systolic Setup advance
 				ss.read_en = false;
-				ss.advance_en = true;
+				ss.push_en = true;
 				ss.switch_en = true;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -555,8 +564,8 @@ namespace UnitTest
 			}
 
 			//Register update
-			ss.read_vector_from_UB();
-			ss.advance_vector_to_MMU();
+			ss.read_vector_from_UB_when_enable();
+			ss.push_vectors_to_MMU_when_enable();
 			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 
@@ -620,7 +629,7 @@ namespace UnitTest
 			case 0:
 				//Systolic setup program
 				ss.read_en = true;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -628,7 +637,7 @@ namespace UnitTest
 			case 1:
 				//Weight FIFO advance
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = true;
 				mmu.write_en = true;
@@ -639,7 +648,7 @@ namespace UnitTest
 			case 6:
 				//NOP
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -647,7 +656,7 @@ namespace UnitTest
 			case 3:
 				//Systolic Setup advance
 				ss.read_en = false;
-				ss.advance_en = true;
+				ss.push_en = true;
 				ss.switch_en = true;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -655,8 +664,8 @@ namespace UnitTest
 			}
 
 			//Register update
-			ss.read_vector_from_UB();
-			ss.advance_vector_to_MMU();
+			ss.read_vector_from_UB_when_enable();
+			ss.push_vectors_to_MMU_when_enable();
 			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 
@@ -757,7 +766,7 @@ namespace UnitTest
 			case 0:
 				//Systolic setup program
 				ss.read_en = true;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -765,7 +774,7 @@ namespace UnitTest
 			case 1:
 				//Weight FIFO advance
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = true;
 				mmu.write_en = true;
@@ -776,7 +785,7 @@ namespace UnitTest
 			case 6:
 				//NOP
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -784,7 +793,7 @@ namespace UnitTest
 			case 3:
 				//Systolic Setup advance
 				ss.read_en = false;
-				ss.advance_en = true;
+				ss.push_en = true;
 				ss.switch_en = true;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -795,8 +804,8 @@ namespace UnitTest
 			}
 
 			//Register update
-			ss.read_vector_from_UB();
-			ss.advance_vector_to_MMU();
+			ss.read_vector_from_UB_when_enable();
+			ss.push_vectors_to_MMU_when_enable();
 			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 
@@ -891,7 +900,7 @@ namespace UnitTest
 			case 0:
 				//Unified Buffer read from HM
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -903,7 +912,7 @@ namespace UnitTest
 			case 2:
 				//Systolic setup program
 				ss.read_en = true;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -914,7 +923,7 @@ namespace UnitTest
 			case 3:
 				//Weight FIFO advance
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = true;
 				mmu.write_en = true;
@@ -929,7 +938,7 @@ namespace UnitTest
 			case 8:
 				//NOP
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -940,7 +949,7 @@ namespace UnitTest
 			case 5:
 				//Systolic Setup advance
 				ss.read_en = false;
-				ss.advance_en = true;
+				ss.push_en = true;
 				ss.switch_en = true;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -953,7 +962,7 @@ namespace UnitTest
 			case 9:
 				//Activation mat write from accm
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -968,7 +977,7 @@ namespace UnitTest
 			case 10:
 				//Write to host mem
 				ss.read_en = false;
-				ss.advance_en = false;
+				ss.push_en = false;
 				ss.switch_en = false;
 				wf.push_en = false;
 				mmu.write_en = false;
@@ -980,9 +989,9 @@ namespace UnitTest
 				break;
 			}
 			//Register update
-			ub.read_vector_when_enable();
-			ss.read_vector_from_UB();
-			ss.advance_vector_to_MMU();
+			ub.read_vector_from_HM_when_enable();
+			ss.read_vector_from_UB_when_enable();
+			ss.push_vectors_to_MMU_when_enable();
 			wf.push_weight_vector_to_MMU_when_en();
 			mmu.setup_array();
 			act.do_activation_and_write_to_UB();

@@ -12,13 +12,7 @@ private:
 	//internal
 	Counter read_vector_counter;
 
-	void read_vector_from_HM(int step, int max_step, int matrix_size, int read_addr, int hm_read_addr)
-	{
-		for (int i = 0; i < matrix_size; i++)
-		{
-			mem_block[read_addr + step][i] = hm->mem_block[hm_read_addr + step][i];
-		}
-	}
+	void read_vector_from_HM(int, int, int, int, int);
 
 public:
 	//setting
@@ -55,6 +49,7 @@ public:
 			NULL,
 			NULL,
 			NULL,
+			NULL,
 			bind(&Unified_Buffer::read_vector_from_HM, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5),
 			NULL
 		);
@@ -67,11 +62,6 @@ public:
 		delete[] mem_block;
 	}
 
-	void read_vector_when_enable()
-	{
-		assert(hm != NULL);
-
-		read_vector_counter.count(matrix_size, matrix_size, addr, hm_addr);
-	}
+	void read_vector_from_HM_when_enable();
 };
 

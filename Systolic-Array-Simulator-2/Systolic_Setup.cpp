@@ -1,81 +1,64 @@
 #include "Systolic_Setup.h"
 
-void Systolic_Setup::read_vector_from_UB()
+void Systolic_Setup::read_vector_from_UB_when_enable()
 {
-	if (read_en && !reading)
-	{
-		reset_internal_matrix();
-		reading = true;
-		read_count = 0;
-		ub_addr_reg = ub_addr;
-	}
-
-	if (reading)
-	{
-		program_input_vector();
-		read_count++;
-
-		if (read_count == matrix_size)
-		{
-			reading = false;
-			read_count = 0;
-		}
-	}
+	read_vector_counter.count(matrix_size, matrix_size, ub_addr, 0);
 }
 
-void Systolic_Setup::program_input_vector()
+void Systolic_Setup::read_vector_from_UB(int step, int max_step, int matrix_size, int addr)
 {
 	assert(ub != NULL);
 
 	for (int i = 0; i < matrix_size; i++)
 	{
-		diagonalized_matrix[i][i + read_count] = ub->mem_block[i][ub_addr_reg + read_count];
+		// 1 2 3 4 > >
+		// > 1 2 3 4 >
+		// > > 1 2 3 4
+		diagonalized_matrix[i][i + step] = ub->mem_block[addr + i][step];
 	}
 }
 
-void Systolic_Setup::reset_internal_matrix()
+void Systolic_Setup::reset_internal_matrix(int matrix_size)
 {
 	for (int i = 0; i < matrix_size; i++)
 	{
-		std::fill(diagonalized_matrix[i], diagonalized_matrix[i] + diag_width, (int8_t)0);
+		std::fill(diagonalized_matrix[i], diagonalized_matrix[i] + DIAG_WIDTH(matrix_size), (int8_t)0);
 	}
 }
 
-void Systolic_Setup::advance_vector_to_MMU()
+void Systolic_Setup::push_vectors_to_MMU_when_enable()
 {
-	if (advance_en && !advancing)
-	{
-		advancing = true;
-		advance_count = 0;
-		std::fill(switch_weights, switch_weights + matrix_size, false);
-	}
-
-	advance_outputs_to_accm();
-
-	if (advancing)
-	{
-		advance_switchs();
-		advance_internal_vector();
-		advance_count++;
-
-		if (advance_count == diag_width + matrix_size - 1) //last input column got into last weight column
-		{
-			advancing = false;
-			advance_count = 0;
-		}
-	}
+	push_vector_counter.count(DIAG_WIDTH(matrix_size), matrix_size, switch_en, acc_addr_in);
 }
 
-void Systolic_Setup::advance_switchs()
+void Systolic_Setup::reset_switch_vector(int matrix_size)
 {
-	if (advance_count == 0)
+	std::fill(switch_weights, switch_weights + matrix_size, false);
+}
+
+void Systolic_Setup::reset_acc_outs()
+{
+	acc_write_en = false;
+}
+
+void Systolic_Setup::push_data_and_switch_vector_to_MMU(int step, int max_step, int matrix_size, int addr, int acc_addr)
+{
+	advance_switch_vector(step, max_step, matrix_size, addr, acc_addr);
+	push_data_vector_to_MMU(step, max_step, matrix_size, addr, acc_addr);
+	acc_addr_out = acc_addr + step;
+	acc_write_en = true;
+}
+
+void Systolic_Setup::advance_switch_vector(int step, int max_step, int matrix_size, int switch_en, int acc_addr)
+{
+	if (step == 0)
 	{
-		switch_weights[advance_count] = switch_en;
+		switch_weights[step] = switch_en;
 	}
-	else if (advance_count < matrix_size)
+	else if (step < matrix_size)
 	{
-		switch_weights[advance_count] = switch_weights[advance_count - 1];
-		switch_weights[advance_count - 1] = false;
+		switch_weights[step] = switch_weights[step - 1];
+		switch_weights[step - 1] = false;
 	}
 	else
 	{
@@ -83,14 +66,8 @@ void Systolic_Setup::advance_switchs()
 	}
 }
 
-void Systolic_Setup::advance_internal_vector()
+void Systolic_Setup::push_data_vector_to_MMU(int step, int max_step, int matrix_size, int addr, int acc_addr)
 {
 	for (int i = 0; i < matrix_size; i++)
-		input_datas[i] = (advance_count >= diag_width) ? 0 : diagonalized_matrix[i][advance_count];
-}
-
-void Systolic_Setup::advance_outputs_to_accm()
-{
-	acc_write_en = advancing;
-	acc_addr_out = acc_addr_in + advance_count;
+		input_datas[i] = (step >= DIAG_WIDTH(matrix_size)) ? 0 : diagonalized_matrix[i][step];
 }
