@@ -9,28 +9,28 @@
 class Systolic_Setup
 {
 private:
+	int matrix_size;
+
 	Counter push_vector_counter;
 	Counter read_vector_counter;
 
-	void reset_internal_matrix(int); //on start
+	void reset_internal_matrix(); //on start
 	void read_vector_from_UB(int, int, int, int); //on count
 
-	void reset_switch_vector(int); //on start
+	void reset_switch_vector(); //on start
 	void push_data_and_switch_vector_to_MMU(int, int, int, int, int); //on count
 	void advance_switch_vector(int, int, int, int, int);
 	void push_data_vector_to_MMU(int, int, int, int, int);
 	void reset_acc_outs(); //on end
 
 public:
-	//setting
-	int matrix_size;
-
 	//input
 	bool push_en;
 	bool read_en;
 	bool switch_en;
 	int ub_addr;
 	int acc_addr_in;
+	int matrix_size_in;
 
 	//output
 	int8_t* input_datas;
@@ -56,6 +56,7 @@ public:
 		switch_en = false;
 		ub_addr = 0;
 		acc_addr_in = 0;
+		matrix_size_in = matrix_size;
 
 		input_datas = new int8_t[matrix_size];
 		std::fill(input_datas, input_datas + matrix_size, 0);
@@ -72,8 +73,8 @@ public:
 		ub = NULL;
 
 		read_vector_counter.addHandlers(
+			bind(&Systolic_Setup::reset_internal_matrix, this),
 			NULL,
-			bind(&Systolic_Setup::reset_internal_matrix, this, placeholders::_1),
 			NULL,
 			bind(&Systolic_Setup::read_vector_from_UB, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
 			NULL,
@@ -81,8 +82,8 @@ public:
 		);
 
 		push_vector_counter.addHandlers(
+			bind(&Systolic_Setup::reset_switch_vector, this),
 			NULL,
-			bind(&Systolic_Setup::reset_switch_vector, this, placeholders::_1),
 			NULL,
 			NULL,
 			bind(&Systolic_Setup::push_data_and_switch_vector_to_MMU, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5),

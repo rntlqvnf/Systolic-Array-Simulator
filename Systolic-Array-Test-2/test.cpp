@@ -139,13 +139,14 @@ namespace UnitTest
 	}
 
 	TEST(SystolicSetupTest, PushTest) {
-		int matrix_size = 2;
+		int matrix_size = 4;
+		int matrix_size_in = 2;
 		Systolic_Setup ss(matrix_size);
 		Unified_Buffer ub(matrix_size, 2);
 
 		ss.ub = &ub;
 
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < matrix_size_in; i++)
 		{
 			ub.mem_block[i][0] = i + 1;
 			ub.mem_block[i][1] = i + 2;
@@ -159,12 +160,13 @@ namespace UnitTest
 
 		ss.ub_addr = 0;
 		ss.read_en = true;
+		ss.matrix_size_in = matrix_size_in;
 		ss.read_vector_from_UB_when_enable();
 		ss.read_vector_from_UB_when_enable();
 
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < matrix_size_in; i++)
 		{
-			for (int j = 0; j < 2*matrix_size - 1; j++)
+			for (int j = 0; j < 2*matrix_size_in - 1; j++)
 			{
 				EXPECT_EQ(answer[i][j], ss.diagonalized_matrix[i][j]) << "Diagonalization 1 failed in " << i;
 			}
@@ -176,16 +178,32 @@ namespace UnitTest
 		for (int i = 0; i < DIAG_WIDTH(matrix_size); i++)
 		{
 			ss.push_vectors_to_MMU_when_enable();
-			EXPECT_EQ(answer[0][i], ss.input_datas[0]) << "Advancing 1 failed in " << i;
-			EXPECT_EQ(answer[1][i], ss.input_datas[1]) << "Advancing 2 failed in " << i;
-			if (i < matrix_size)
+			if (i < DIAG_WIDTH(matrix_size_in))
+			{
+				EXPECT_EQ(answer[0][i], ss.input_datas[0]) << "Advancing 1 failed in " << i;
+				EXPECT_EQ(answer[1][i], ss.input_datas[1]) << "Advancing 2 failed in " << i;
+			}
+			else
+			{
+				EXPECT_EQ(0, ss.input_datas[0]) << "Advancing 1 failed in " << i;
+				EXPECT_EQ(0, ss.input_datas[1]) << "Advancing 2 failed in " << i;
+			}
+
+			if (i < matrix_size_in)
 			{
 				for (int j = 0; j < matrix_size; j++)
 				{
-					if(i == j)
-						EXPECT_TRUE(ss.switch_weights[j]) << "Switch " << j << " shoud be true";
+					if (j < matrix_size_in)
+					{
+						if (i == j)
+							EXPECT_TRUE(ss.switch_weights[j]) << "Switch " << j << " shoud be true";
+						else
+							EXPECT_FALSE(ss.switch_weights[j]) << "Switch " << j << " shoud be false";
+					}
 					else
+					{
 						EXPECT_FALSE(ss.switch_weights[j]) << "Switch " << j << " shoud be false";
+					}
 				}
 			}
 			else
@@ -213,6 +231,7 @@ namespace UnitTest
 
 		ss.ub_addr = 0;
 		ss.read_en = true;
+		ss.matrix_size_in = matrix_size;
 		ss.read_vector_from_UB_when_enable();
 		ss.read_vector_from_UB_when_enable();
 
@@ -230,6 +249,88 @@ namespace UnitTest
 
 		EXPECT_EQ(0, ss.diagonalized_matrix[0][DIAG_WIDTH(matrix_size) - 1]);
 		EXPECT_EQ(3, ss.diagonalized_matrix[1][DIAG_WIDTH(matrix_size) - 1]);
+	}
+
+	TEST(SystolicSetupTest, PushWithMatrixSizeIn) {
+		int matrix_size = 4;
+		int matrix_size_in = 2;
+		Systolic_Setup ss(matrix_size);
+		Unified_Buffer ub(matrix_size, 2);
+
+		ss.ub = &ub;
+
+		for (int i = 0; i < matrix_size_in; i++)
+		{
+			ub.mem_block[i][0] = i + 1;
+			ub.mem_block[i][1] = i + 2;
+		}
+
+		ss.ub_addr = 0;
+		ss.read_en = true;
+		ss.matrix_size_in = matrix_size_in;
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+
+		ss.acc_addr_in = 1;
+		ss.read_en = false;
+		ss.push_en = true;
+		for (int i = 0; i < DIAG_WIDTH(matrix_size); i++)
+		{
+			ss.push_vectors_to_MMU_when_enable();
+			if (i >= DIAG_WIDTH(matrix_size_in))
+			{
+				EXPECT_EQ(0, ss.input_datas[0]);
+				EXPECT_EQ(0, ss.input_datas[1]);
+			}
+		}
+	}
+
+	TEST(SystolicSetupTest, AccOutTest) {
+		int matrix_size = 4;
+		int matrix_size_in = 2;
+		Systolic_Setup ss(matrix_size);
+		Unified_Buffer ub(matrix_size, 2);
+
+		ss.ub = &ub;
+
+		for (int i = 0; i < matrix_size_in; i++)
+		{
+			ub.mem_block[i][0] = i + 1;
+			ub.mem_block[i][1] = i + 2;
+		}
+
+		ss.ub_addr = 0;
+		ss.read_en = true;
+		ss.matrix_size_in = matrix_size_in;
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+
+		ss.acc_addr_in = 1;
+		ss.read_en = false;
+		ss.push_en = true;
+
+		for (int i = 0; i < DIAG_WIDTH(matrix_size); i++)
+		{
+			ss.push_vectors_to_MMU_when_enable();
+
+			if (i >= matrix_size)
+			{
+				if (i == DIAG_WIDTH(matrix_size) - 1)
+				{
+					EXPECT_FALSE(ss.acc_write_en);
+				}
+				else
+				{
+					EXPECT_EQ(1 + (i - matrix_size), ss.acc_addr_out);
+					EXPECT_TRUE(ss.acc_write_en);
+				}
+			}
+			else
+			{
+				EXPECT_EQ(1, ss.acc_addr_out) << "Expect 1 if under matrix_size " << i;
+				EXPECT_FALSE(ss.acc_write_en) << "Expect False if under matrix_size " << i;
+			}
+		}
 	}
 
 	TEST(WeightFIFOTest, PushPopTest) {
@@ -347,7 +448,8 @@ namespace UnitTest
 
 	TEST(UnifiedBufferTest, ReadHMTest)
 	{
-		int matrix_size = 2;
+		int matrix_size = 4;
+		int matrix_size_in = 2;
 		Memory hm(matrix_size, 10);
 		Unified_Buffer ub(matrix_size, 10);
 
@@ -365,15 +467,16 @@ namespace UnitTest
 		ub.addr = 1;
 		ub.hm_addr = 0;
 		ub.read_en = true;
+		ub.matrix_size_in = matrix_size_in;
 
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < matrix_size_in; i++)
 		{
 			ub.read_vector_from_HM_when_enable();
 		}
 
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < matrix_size_in; i++)
 		{
-			for (int j = 0; j < matrix_size; j++)
+			for (int j = 0; j < matrix_size_in; j++)
 			{
 				EXPECT_EQ(ub.mem_block[1 + i][j], hm.mem_block[i][j]) << "Unified Buffer Read failed in " << i << ", " << j;
 			}
@@ -384,9 +487,9 @@ namespace UnitTest
 		hm.mem_block[3][0] = 100;
 		ub.read_vector_from_HM_when_enable();
 
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < matrix_size_in; i++)
 		{
-			for (int j = 0; j < matrix_size; j++)
+			for (int j = 0; j < matrix_size_in; j++)
 			{
 				EXPECT_EQ(ub.mem_block[1 + i][j], hm.mem_block[i][j]) << "No read when false " << i << ", " << j;
 			}

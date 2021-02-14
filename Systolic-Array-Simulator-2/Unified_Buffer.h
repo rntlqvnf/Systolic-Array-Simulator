@@ -9,22 +9,22 @@
 class Unified_Buffer
 {
 private:
+	int addr_size;
+	int matrix_size;
+
 	//internal
 	Counter read_vector_counter;
 
 	void read_vector_from_HM(int, int, int, int, int);
 
 public:
-	//setting
-	int addr_size;
-	int matrix_size;
-
 	int8_t** mem_block;
 
 	//input
 	int addr;
 	int hm_addr;
 	bool read_en;
+	int matrix_size_in;
 
 	//other HW
 	Memory *hm;
@@ -42,6 +42,7 @@ public:
 		addr = 0;
 		hm_addr = 0;
 		read_en = false;
+		matrix_size_in = matrix_size;
 
 		hm = NULL;
 
