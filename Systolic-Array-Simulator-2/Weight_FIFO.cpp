@@ -7,6 +7,7 @@ void Weight_FIFO::push(int8_t** mat)
 
 void Weight_FIFO::pop_ifn_start()
 {
+	write_en = true;
 	if (state == STATE::READ_END)
 	{
 		state = STATE::PUSH_END;

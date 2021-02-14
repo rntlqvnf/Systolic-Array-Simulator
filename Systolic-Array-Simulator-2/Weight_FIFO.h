@@ -33,11 +33,12 @@ public:
 
 	//input
 	bool read_en;
+	bool push_en;
 	int dram_addr;
 
 	//output
 	int8_t* input_weights;
-	bool push_en;
+	bool write_en;
 
 	//internal
 	std::queue<int8_t**> weight_queue;
@@ -58,6 +59,7 @@ public:
 		dram_addr = 0;
 
 		input_weights = new int8_t[matrix_size];
+		write_en = false;
 		std::fill(input_weights, input_weights + matrix_size, 0);
 		dram = NULL;
 

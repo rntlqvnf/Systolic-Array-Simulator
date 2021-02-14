@@ -65,8 +65,9 @@ void MMU::program_input_switch()
 
 void MMU::program_input_write_things()
 {
-	if (wf->push_en && !progressing) //TODO
+	if (wf->write_en && !progressing)
 	{
+		wf->write_en = false;
 		progressing = true;
 		prog_step = 0;
 	}
