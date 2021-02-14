@@ -26,18 +26,15 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 		assert(parsed_inst.size() == 4);
 
 		controls["ub.read_en"] = true;
-		controls["ss.read_en"] = true;
 
 		values["ub.hm_addr"] = atoi(parsed_inst[1].c_str());
 		values["ub.addr"] = atoi(parsed_inst[2].c_str());
 		values["ub.matrix_size_in"] = atoi(parsed_inst[3].c_str());
-		values["ss.ub_addr"] = atoi(parsed_inst[2].c_str());
-		values["ss.matrix_size_in"] = atoi(parsed_inst[3].c_str());
 	}
 	else if (opcode == "WHM")
 	{
 		//WHM src dst N
-		assert(parsed_inst.size() == 3);
+		assert(parsed_inst.size() == 4);
 
 		controls["ub.write_en"] = true;
 
@@ -60,6 +57,7 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 		//If switch, weight push
 		assert(parsed_inst.size() == 4);
 
+		controls["ss.read_en"] = true;
 		controls["ss.push_en"] = true;
 		controls["ss.switch_en"] = true;
 		controls["wf.push_en"] = true;
@@ -73,8 +71,8 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 		//MMC.O src dst N
 		assert(parsed_inst.size() == 4);
 
+		controls["ss.read_en"] = true;
 		controls["ss.push_en"] = true;
-		controls["ss.switch_en"] = true;
 
 		values["ss.ub_addr"] = atoi(parsed_inst[1].c_str());
 		values["ss.acc_addr_in"] = atoi(parsed_inst[2].c_str());

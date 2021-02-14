@@ -14,6 +14,8 @@
 #include "../Systolic-Array-Simulator-2/Activation.h"
 #include "../Systolic-Array-Simulator-2/Activation.cpp"
 #include "../Systolic-Array-Simulator-2/Memory.h"
+#include "../Systolic-Array-Simulator-2/Decoder.h"
+#include "../Systolic-Array-Simulator-2/Decoder.cpp"
 
 void allocate_array(int8_t** &mat, int matrix_size)
 {
@@ -1169,10 +1171,10 @@ namespace UnitTest
 
 		for (int i = 0; i < 15; i++)
 		{
-			// 0 1 ub read & ss program
+			// 0 1 ub read
 			// 1 wf read
 			// 2, 3, 4, 5 wf push (Auto push)
-			// 6, 7, 8, 9, 10, 11 12 mmu cal(~11) and accm write(~12)
+			// 6, 7, 8, 9, 10, 11 12 mmu cal & ss program(~11) and accm write(~12)
 			// 13, 14 act
 			// 15, 16 write to hm
 
@@ -1186,12 +1188,12 @@ namespace UnitTest
 				ub.hm_addr = 0;
 				ub.matrix_size_in = matrix_size_in;
 
-				ss.read_en = true;
+				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
-				ss.matrix_size_in = matrix_size_in;
+				ss.matrix_size_in = 0;
 
 				wf.push_en = false;
 				wf.read_en = false;
@@ -1236,7 +1238,7 @@ namespace UnitTest
 				ub.hm_addr = 0;
 				ub.matrix_size_in = 0;
 
-				ss.read_en = false;
+				ss.read_en = true;
 				ss.push_en = true;
 				ss.switch_en = true;
 				ss.ub_addr = 0;
@@ -1329,11 +1331,15 @@ namespace UnitTest
 			//Register update
 			ub.read_vector_from_HM_when_enable();
 			ub.write_vector_to_HM_when_enable();
-			ss.push_vectors_to_MMU_when_enable();
+
 			ss.read_vector_from_UB_when_enable();
+			ss.push_vectors_to_MMU_when_enable();
+
 			wf.push_weight_vector_to_MMU_when_en();
 			wf.read_matrix_from_DRAM_when_en();
+
 			acc.write_results();
+
 			act.do_activation_and_write_to_UB();
 
 			//Combination Logic
@@ -1367,4 +1373,136 @@ namespace UnitTest
 			}
 		}
 	}
+
+	TEST(DecoderTest, ParseTest) {
+		Decoder decoder;
+
+		string delimiter(" ");
+		string instruction("RHM 0 1 8");
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_TRUE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(0, decoder.values["ub.hm_addr"]);
+		EXPECT_EQ(1, decoder.values["ub.addr"]);
+		EXPECT_EQ(8, decoder.values["ub.matrix_size_in"]);
+
+		instruction = "WHM 0 1 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_TRUE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(0, decoder.values["ub.addr"]);
+		EXPECT_EQ(1, decoder.values["ub.hm_addr"]);
+		EXPECT_EQ(8, decoder.values["ub.matrix_size_in"]);
+
+		instruction = "RW 2";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_TRUE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(2, decoder.values["wf.dram_addr"]);
+
+		instruction = "MMC.S 1 2 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_TRUE(decoder.controls["ss.switch_en"]);
+		EXPECT_TRUE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(8, decoder.values["ss.matrix_size_in"]);
+
+		instruction = "MMC.O 1 2 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(8, decoder.values["ss.matrix_size_in"]);
+
+		instruction = "ACT 3 4 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_TRUE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(3, decoder.values["act.acc_addr"]);
+		EXPECT_EQ(4, decoder.values["act.ub_addr"]);
+		EXPECT_EQ(8, decoder.values["act.matrix_size_in"]);
+
+		instruction = "HLT";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_TRUE(decoder.controls["halt"]);
+
+		instruction = "WRONG 1 3 4";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_TRUE(decoder.controls["halt"]);
+	}
 }
+
