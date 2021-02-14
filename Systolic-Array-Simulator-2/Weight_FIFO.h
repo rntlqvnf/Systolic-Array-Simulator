@@ -8,13 +8,22 @@
 
 using namespace std;
 
+enum class STATE
+{
+	INITIAL,
+	READ_END,
+	PUSH_END
+};
+
 class Weight_FIFO
 {
 private:
 	//internal
 	Counter push_matrix_counter;
 	Counter read_matrix_counter;
+	STATE state;
 
+	void push_when_startup();
 	void transpose_and_push(int, int, int, int);
 	void read_matrix_when_max_step(int ,int, int, int);
 
@@ -23,12 +32,12 @@ public:
 	int matrix_size;
 
 	//input
-	bool push_en;
 	bool read_en;
 	int dram_addr;
 
 	//output
 	int8_t* input_weights;
+	bool push_en;
 
 	//internal
 	std::queue<int8_t**> weight_queue;
@@ -39,7 +48,8 @@ public:
 	Weight_FIFO(int _matrix_size)
 		: 
 		push_matrix_counter(&push_en),
-		read_matrix_counter(&read_en) //64 bytes
+		read_matrix_counter(&read_en), //64 bytes
+		state(STATE::INITIAL)
 	{
 		matrix_size = _matrix_size;
 
@@ -52,12 +62,12 @@ public:
 		dram = NULL;
 
 		push_matrix_counter.addHandlers(
-			NULL,
+			bind(&Weight_FIFO::pop_ifn_start, this),
 			NULL,
 			NULL,
 			bind(&Weight_FIFO::transpose_and_push, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
 			NULL,
-			bind(&Weight_FIFO::pop, this)
+			NULL
 		);
 
 		read_matrix_counter.addHandlers(
@@ -66,7 +76,7 @@ public:
 			NULL,
 			bind(&Weight_FIFO::read_matrix_when_max_step, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
 			NULL,
-			NULL
+			bind(&Weight_FIFO::push_when_startup, this)
 		);
 	}
 
@@ -76,9 +86,9 @@ public:
 	}
 	
 	void push(int8_t** mat);
-	void pop();
-	void push_weight_vector_to_MMU_when_en();
+	void pop_ifn_start();
 	void read_matrix_from_DRAM_when_en();
+	void push_weight_vector_to_MMU_when_en();
 };
 
 

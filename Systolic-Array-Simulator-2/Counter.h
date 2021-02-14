@@ -60,9 +60,9 @@ public:
 		this->on_end = on_end;
 	}
 
-	void count(int _max_count, int _matrix_size, int _addr, int _addr2)
+	void count(bool additional_enable, int _max_count, int _matrix_size, int _addr, int _addr2)
 	{
-		if (*enable && !counting)
+		if ((*enable || additional_enable) && !counting)
 		{
 			max_count = _max_count;
 			matrix_size = _matrix_size;
@@ -72,7 +72,7 @@ public:
 			counting = true;
 			count_step = 0;
 
-			if(on_start_without_matrix_size != NULL)
+			if (on_start_without_matrix_size != NULL)
 				on_start_without_matrix_size();
 
 			if (on_start_with_matrix_size != NULL)
@@ -99,10 +99,15 @@ public:
 			{
 				counting = false;
 				count_step = 0;
-				if(on_end != NULL)
+				if (on_end != NULL)
 					on_end();
 			}
 		}
+	}
+
+	void count(int _max_count, int _matrix_size, int _addr, int _addr2)
+	{
+		count(false, _max_count, _matrix_size, _addr, _addr2);
 	}
 };
 

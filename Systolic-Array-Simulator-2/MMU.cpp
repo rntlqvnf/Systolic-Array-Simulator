@@ -65,25 +65,17 @@ void MMU::program_input_switch()
 
 void MMU::program_input_write_things()
 {
-	for (int i = 0; i < matrix_size; i++)
-	{
-		if(progressing)
-			mac_array[0][i].write_en_in = progressing;
-		else
-			mac_array[0][i].write_en_in = write_en;
-
-		mac_array[0][i].weight_tag_in = prog_step;
-		mac_array[0][i].weight_in = wf->input_weights[i];
-	}
-	advance_write();
-}
-
-void MMU::advance_write()
-{
-	if (write_en && !progressing)
+	if (wf->push_en && !progressing) //TODO
 	{
 		progressing = true;
 		prog_step = 0;
+	}
+	
+	for (int i = 0; i < matrix_size; i++)
+	{
+		mac_array[0][i].write_en_in = progressing;
+		mac_array[0][i].weight_tag_in = prog_step;
+		mac_array[0][i].weight_in = wf->input_weights[i];
 	}
 
 	if (progressing)

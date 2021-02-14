@@ -5,9 +5,13 @@ void Weight_FIFO::push(int8_t** mat)
 	weight_queue.push(mat);
 }
 
-void Weight_FIFO::pop()
+void Weight_FIFO::pop_ifn_start()
 {
-	if (!weight_queue.empty())
+	if (state == STATE::READ_END)
+	{
+		state = STATE::PUSH_END;
+	}
+	else if (!weight_queue.empty())
 	{
 		int8_t** mat_to_remove = weight_queue.front();
 
@@ -19,22 +23,25 @@ void Weight_FIFO::pop()
 	}
 }
 
-void Weight_FIFO::push_weight_vector_to_MMU_when_en()
-{
-	push_matrix_counter.count(matrix_size, matrix_size, 0, 0);
-}
-
 void Weight_FIFO::read_matrix_from_DRAM_when_en()
 {
 	int max_count = (matrix_size * matrix_size + 64 - 1) / 64;
 	read_matrix_counter.count(max_count, matrix_size, dram_addr, 0);
 }
 
+void Weight_FIFO::push_weight_vector_to_MMU_when_en()
+{
+	if(state == STATE::READ_END)
+		push_matrix_counter.count(true, matrix_size, matrix_size, 0, 0);
+	else
+		push_matrix_counter.count(matrix_size, matrix_size, 0, 0);
+}
+
 void Weight_FIFO::transpose_and_push(int step, int max_step, int matrix_size, int addr)
 {
 	if (!weight_queue.empty())
 	{
-		for (int i = 0;i < matrix_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
+		for (int i = 0; i < matrix_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
 			input_weights[i] = weight_queue.front()[i][max_step - step - 1];
 	}
 }
@@ -57,4 +64,10 @@ void Weight_FIFO::read_matrix_when_max_step(int step, int max_step, int matrix_s
 
 		weight_queue.push(mat);
 	}
+}
+
+void Weight_FIFO::push_when_startup()
+{
+	if (state == STATE::INITIAL)
+		state = STATE::READ_END;
 }

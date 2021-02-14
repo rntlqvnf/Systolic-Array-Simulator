@@ -12,14 +12,10 @@ private:
 	void program_input_data();
 	void program_input_switch();
 	void program_input_write_things();
-	void advance_write();
 	void program_output_to_input();
 public:
 	//setting
 	int matrix_size;
-
-	//input
-	bool write_en;
 
 	//output
 	int32_t* last_row_sum;
@@ -36,8 +32,6 @@ public:
 	MMU(int _matrix_size = MAT_SIZE)
 	{
 		matrix_size = _matrix_size;
-
-		write_en = false;
 
 		last_row_sum = new int32_t[matrix_size];
 
