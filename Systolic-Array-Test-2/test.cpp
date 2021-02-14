@@ -42,7 +42,7 @@ void allocate_array(int8_t** &mat, int matrix_size, int8_t* copy)
 namespace UnitTest
 {
 	TEST(MACTest, DataThroughTest) {
-		MAC mac;
+		MAC mac(3);
 		mac.data_in = (int8_t)2;
 		mac.weight_in = (int8_t)4;
 		mac.weight_tag_in = (int8_t)10;
@@ -55,7 +55,7 @@ namespace UnitTest
 		EXPECT_TRUE(mac.write_en_out) << "Write flag should propagate";
 	}
 	TEST(MACTest, WithoutSum) {
-		MAC mac;
+		MAC mac(3);
 		mac.data_in = (int8_t) 1;
 		mac.weight_buf[0] = (int8_t)2;
 		mac.calculate();
@@ -63,7 +63,7 @@ namespace UnitTest
 		EXPECT_EQ(2, mac.sum_out) << "Sum in should be zero";
 	}
 	TEST(MACTest, WithSum) {
-		MAC mac;
+		MAC mac(3);
 		mac.data_in = (int8_t)1;
 		mac.weight_buf[0] = (int8_t)2;
 		mac.sum_in = (int32_t)10;
@@ -72,7 +72,7 @@ namespace UnitTest
 		EXPECT_EQ(12, mac.sum_out) << "Sum in should effect";
 	}
 	TEST(MACTest, WeightSwitch) {
-		MAC mac;
+		MAC mac(3);
 		mac.matrix_size = 16;
 		mac.weight_in = (int8_t)10;
 		mac.write_en_in = true;
@@ -82,7 +82,7 @@ namespace UnitTest
 		EXPECT_EQ(10, mac.weight_buf[1 - mac.current_weight]) << "Weight buf should write when tag matches";
 	}
 	TEST(MACTest, SwitchAndCalculate) {
-		MAC mac;
+		MAC mac(3);
 		mac.matrix_size = 16;
 		mac.weight_in = (int8_t)10;
 		mac.write_en_in = true;

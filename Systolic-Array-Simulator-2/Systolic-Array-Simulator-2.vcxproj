@@ -153,7 +153,6 @@
   <ItemGroup>
     <ClInclude Include="Accumulator.h" />
     <ClInclude Include="Activation.h" />
-    <ClInclude Include="config.h" />
     <ClInclude Include="Counter.h" />
     <ClInclude Include="Decoder.h" />
     <ClInclude Include="Memory.h" />

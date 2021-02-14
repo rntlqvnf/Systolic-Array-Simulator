@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "config.h"
 #include <iostream>
 
 class MAC
@@ -29,7 +28,9 @@ public:
 	int8_t weight_buf[2];
 	int current_weight;
 
-	MAC(int _matrix_size = MAT_SIZE) :
+	MAC() {}
+
+	MAC(int _matrix_size) :
 		weight_buf{}
 	{
 		matrix_size = _matrix_size;

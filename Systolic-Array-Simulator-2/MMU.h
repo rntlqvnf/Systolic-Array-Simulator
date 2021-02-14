@@ -1,7 +1,6 @@
 #pragma once
 
 #include "MAC.h"
-#include "config.h"
 #include "Systolic_Setup.h"
 #include "Weight_FIFO.h"
 #include <iostream>
@@ -29,7 +28,7 @@ public:
 	Systolic_Setup* ss;
 	Weight_FIFO* wf;
 
-	MMU(int _matrix_size = MAT_SIZE)
+	MMU(int _matrix_size)
 	{
 		matrix_size = _matrix_size;
 

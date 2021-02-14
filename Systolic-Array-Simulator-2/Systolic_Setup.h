@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
 #include <algorithm>
-#include "config.h"
 #include "Unified_Buffer.h"
 
 #define DIAG_WIDTH(x) ((2 * x) - 1)
