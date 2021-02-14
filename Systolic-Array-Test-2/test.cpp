@@ -1109,166 +1109,210 @@ namespace UnitTest
 	}
 
 	TEST(ModuleTest, SizeTwoModuleTest) {
-		int matrix_size = 2;
+		int matrix_size = 4;
+		int matrix_size_in = 2;
 
 		Memory hm(matrix_size, 50);
 		Memory dram(matrix_size, 50);
-		Unified_Buffer ub(matrix_size, 2);
+		Unified_Buffer ub(matrix_size, 4);
 		Systolic_Setup ss(matrix_size);
-		MMU mmu(matrix_size);
 		Weight_FIFO wf(matrix_size);
-		Accumulator acc(matrix_size, 100);
+		MMU mmu(matrix_size);
+		Accumulator acc(matrix_size, 50);
 		Activation act(matrix_size);
 
 		ub.hm = &hm;
+		wf.dram = &dram;
 		ss.ub = &ub;
 		mmu.ss = &ss;
 		mmu.wf = &wf;
 		acc.mmu = &mmu;
 		act.acc = &acc;
 
-		//push matrix in Host memory
+		int8_t input[4][4] =
+		{
+			{1,2, 0, 0},
+			{2,3, 0, 0},
+			{0,0, 0, 0},
+			{0,0, 0, 0}
+		};
+
 		for (int i = 0; i < matrix_size; i++)
 		{
-			// 1 2
-			// 3 4
-			hm.mem_block[0][i] = i + 1;
-			hm.mem_block[1][i] = i + 3;
+			for (int j = 0; j < matrix_size; j++)
+			{
+				hm.mem_block[i][j] = input[i][j];
+			}
 		}
 
-		int8_t copy[2][2] =
+		int8_t weight[4][4] =
 		{
-			{1,2},
-			{5,4}
+			{1,2, 0, 0},
+			{5,4, 0, 0},
+			{0,0, 0, 0},
+			{0,0, 0, 0}
 		};
-		int8_t** mat = NULL;
-		allocate_array(mat, matrix_size, copy[0]);
-		wf.push(mat);
 
-		int acc_addr = 0;
-
-		for (int i = 0; i <11; i++)
+		for (int i = 0; i < matrix_size; i++)
 		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				dram.mem_block[i][j] = weight[i][j];
+			}
+		}
+
+		for (int i = 0; i < 15; i++)
+		{
+			// 0 1 ub read & ss program
+			// 1 wf read
+			// 2, 3, 4, 5 wf push (Auto push)
+			// 6, 7, 8, 9, 10, 11 12 mmu cal(~11) and accm write(~12)
+			// 13, 14 act
+
 			//Control setting
 			switch (i)
 			{
-			case 0:
-				//Unified Buffer read from HM
-				ss.read_en = false;
-				ss.push_en = false;
-				ss.switch_en = false;
-				//wf.push_en = false;
-				//mmu.write_en = false;
-				act.act_en = false;
+			case 0: //UB Read & SS Program
 				ub.read_en = true;
-
-				ub.hm_addr = 0;
 				ub.addr = 0;
-			case 2:
-				//Systolic setup program
+				ub.hm_addr = 0;
+				ub.matrix_size_in = matrix_size_in;
+
 				ss.read_en = true;
 				ss.push_en = false;
 				ss.switch_en = false;
-				//wf.push_en = false;
-				//mmu.write_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = matrix_size_in;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
 				act.act_en = false;
-				ub.read_en = false;
+				act.matrix_size_in = 0;
+				act.acc_addr = 0;
+				act.ub_addr = 0;
 
 				break;
-			case 3:
-				//Weight FIFO advance
+
+			case 1: //WF Read
+				ub.read_en = false;
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = 0;
+
 				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
-				//wf.push_en = true;
-				//mmu.write_en = true;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = 0;
+
+				wf.push_en = false;
+				wf.read_en = true;
+				wf.dram_addr = 0;
+
 				act.act_en = false;
-				ub.read_en = false;
+				act.matrix_size_in = 0;
+				act.acc_addr = 0;
+				act.ub_addr = 0;
 
 				break;
-			case 1:
-			case 4:
-			case 6:
-			case 7:
-			case 8:
-				//NOP
-				ss.read_en = false;
-				ss.push_en = false;
-				ss.switch_en = false;
-				//wf.push_en = false;
-				//mmu.write_en = false;
-				act.act_en = false;
-				ub.read_en = false;
 
-				break;
-			case 5:
-				//Systolic Setup advance
+			case 6: //MMU cal
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = 0;
+
 				ss.read_en = false;
 				ss.push_en = true;
 				ss.switch_en = true;
-				//wf.push_en = false;
-				//mmu.write_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = matrix_size_in;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
 				act.act_en = false;
-				ub.read_en = false;
+				act.matrix_size_in = 0;
+				act.acc_addr = 0;
+				act.ub_addr = 0;
 
-				//Setup accm addr
-				ss.acc_addr_in = acc_addr;
 				break;
-			case 9:
-				//Activation mat write from accm
-				ss.read_en = false;
-				ss.push_en = false;
-				ss.switch_en = false;
-				//wf.push_en = false;
-				//mmu.write_en = false;
-				act.act_en = true;
-				ub.read_en = false;
-
-				//Setup accm addr
-				//addr + matrix height -1 (no data cycle)
-
-				//act.addr = acc_addr + matrix_size - 1;
-				break;
-			case 10:
-				//Write to host mem
-				ss.read_en = false;
-				ss.push_en = false;
-				ss.switch_en = false;
-				//wf.push_en = false;
-				//mmu.write_en = false;
-				act.act_en = false;
-				ub.read_en = false;
-
-				//Setup ub addr
+			case 13: //Act
 				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = 0;
+
+				ss.read_en = false;
+				ss.push_en = false;
+				ss.switch_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = 0;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
+				act.act_en = true;
+				act.matrix_size_in = matrix_size_in;
+				act.acc_addr = 0;
+				act.ub_addr = 2;
+
+				break;
+			default: //NOP
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = 0;
+
+				ss.read_en = false;
+				ss.push_en = false;
+				ss.switch_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = 0;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
+				act.act_en = false;
+				act.matrix_size_in = 0;
+				act.acc_addr = 0;
+				act.ub_addr = 0;
 				break;
 			}
+
 			//Register update
 			ub.read_vector_from_HM_when_enable();
-			ss.read_vector_from_UB_when_enable();
 			ss.push_vectors_to_MMU_when_enable();
+			ss.read_vector_from_UB_when_enable();
 			wf.push_weight_vector_to_MMU_when_en();
-			mmu.setup_array();
+			wf.read_matrix_from_DRAM_when_en();
+			acc.write_results();
 			act.do_activation_and_write_to_UB();
 
 			//Combination Logic
+			mmu.setup_array();
 			mmu.calculate();
-
-			//Update accm
-			acc.write_results();
 		}
 
-		//column-wised
 		int8_t answer[2][2] =
 		{
-			{5,13},
-			{8,22}
+			{5,8},
+			{13,22}
 		};
 
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < matrix_size_in; i++)
 		{
-			EXPECT_EQ(answer[i][0], ub.mem_block[i][0]) << "Module failed " << i << ", " << 1;
-			EXPECT_EQ(answer[i][1], ub.mem_block[i][1]) << "Module failed " << i << ", " << 2;
+			for (int j = 0; j < matrix_size_in; j++)
+			{
+				EXPECT_EQ(answer[i][j], ub.mem_block[i + 2][j]) << "Module failed " << i << ", " << j;
+			}
 		}
 	}
 }

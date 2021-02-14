@@ -6,12 +6,11 @@ class Activation
 {
 private:
 	Counter act_vector_counter; 
-
-public:
-	//setting
 	int matrix_size;
 
+public:
 	//input
+	int matrix_size_in;
 	int acc_addr;
 	int ub_addr;
 	bool act_en;
@@ -28,6 +27,7 @@ public:
 	{
 		matrix_size = _matrix_size;
 
+		matrix_size_in = matrix_size;
 		acc_addr = 0;
 		ub_addr = 0;
 		act_en = false;
@@ -48,32 +48,31 @@ public:
 
 	void do_activation_and_write_to_UB()
 	{
-		act_vector_counter.count(matrix_size, matrix_size, acc_addr, ub_addr);
+		act_vector_counter.count(matrix_size_in, matrix_size_in, acc_addr, ub_addr);
 	}
 
 private:
 	void read_activate_write(int step, int max_step, int matrix_size, int acc_addr, int ub_addr)
 	{
-		read_vector_from_UB(step, max_step, matrix_size, acc_addr); // 1 cycle
+		read_vector_from_UB(step, max_step, matrix_size, acc_addr);
 		activate(matrix_size);
-		write_to_UB(step, max_step, matrix_size, ub_addr); // M cycle
+		write_to_UB(step, max_step, matrix_size, ub_addr);
 	}
 	void read_vector_from_UB(int step, int max_step, int matrix_size, int acc_addr)
 	{
 		assert(acc != NULL);
 
-		// addr
-		// 0  1  2 ...
-		// 11 12 ?
-		// ?  21 31
-		// ?  ?  32
+		// (addr / width)
+		//   0  1  2 ...
+		// 0 11 -  -
+		// 1 12 21 -
+		// 2 13 22 31
+		// 3 -  23 32
+		// 4 -  -  33
+
 		for (int i = 0; i < matrix_size; i++)
 		{
-			for (int j = 0; j < matrix_size; j++)
-			{
-				vec[i] = acc->mem_block[i][acc_addr + i + j];
-				//mat[i][j] = acc->mem_block[i][acc_addr + i + j];
-			}
+			vec[i] = acc->mem_block[acc_addr + step + i][i];
 		}
 	}
 	void activate(int matrix_size)
@@ -90,10 +89,8 @@ private:
 
 		for (int i = 0; i < matrix_size; i++)
 		{
-			//11 12 13 14 ...
-			ub->mem_block[ub_addr + step][i] = vec[i];
+			ub->mem_block[ub_addr + i][step] = vec[i];
 		}
 	}
-
 };
 
