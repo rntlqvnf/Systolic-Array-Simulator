@@ -315,15 +315,8 @@ namespace UnitTest
 
 			if (i >= matrix_size)
 			{
-				if (i == DIAG_WIDTH(matrix_size) - 1)
-				{
-					EXPECT_FALSE(ss.acc_write_en);
-				}
-				else
-				{
-					EXPECT_EQ(1 + (i - matrix_size), ss.acc_addr_out);
-					EXPECT_TRUE(ss.acc_write_en);
-				}
+				EXPECT_EQ(1 + (i - matrix_size), ss.acc_addr_out);
+				EXPECT_TRUE(ss.acc_write_en);
 			}
 			else
 			{
@@ -331,6 +324,9 @@ namespace UnitTest
 				EXPECT_FALSE(ss.acc_write_en) << "Expect False if under matrix_size " << i;
 			}
 		}
+
+		ss.push_vectors_to_MMU_when_enable();
+		EXPECT_FALSE(ss.acc_write_en);
 	}
 
 	TEST(WeightFIFOTest, PushPopTest) {
@@ -932,120 +928,179 @@ namespace UnitTest
 	}
 
 	TEST(AccumTest, TwoMacAccmResultTest) {
-		int matrix_size = 2;
-		MMU mmu(matrix_size);
+		int matrix_size = 4;
+		int matrix_size_in = 2;
+
+		Memory hm(matrix_size, 50);
+		Memory dram(matrix_size, 50);
 		Unified_Buffer ub(matrix_size, 2);
 		Systolic_Setup ss(matrix_size);
 		Weight_FIFO wf(matrix_size);
-		Accumulator acc(matrix_size, 100);
+		MMU mmu(matrix_size);
+		Accumulator acc(matrix_size, 50);
 
+		ub.hm = &hm;
+		wf.dram = &dram;
 		ss.ub = &ub;
 		mmu.ss = &ss;
 		mmu.wf = &wf;
 		acc.mmu = &mmu;
 
+		int8_t input[4][4] =
+		{
+			{1,2, 0, 0},
+			{2,3, 0, 0},
+			{0,0, 0, 0},
+			{0,0, 0, 0}
+		};
+
 		for (int i = 0; i < matrix_size; i++)
 		{
-			// matrix
-			// 1 2
-			// 2 3 
-			ub.mem_block[0][i] = i + 1;
-			ub.mem_block[1][i] = i + 2;
+			for (int j = 0; j < matrix_size; j++)
+			{
+				hm.mem_block[i][j] = input[i][j];
+			}
 		}
 
-		int8_t copy[2][2] =
+		int8_t weight[4][4] =
 		{
-			{1,2},
-			{5,4}
+			{1,2, 0, 0},
+			{5,4, 0, 0},
+			{0,0, 0, 0},
+			{0,0, 0, 0}
 		};
-		int8_t** mat = NULL;
-		allocate_array(mat, matrix_size, copy[0]);
-		wf.push(mat);
 
-		for (int i = 0; i < 7; i++)
+		for (int i = 0; i < matrix_size; i++)
 		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				dram.mem_block[i][j] = weight[i][j];
+			}
+		}
+
+		for (int i = 0; i < 13; i++)
+		{
+			// 0 1 ub read & ss program
+			// 1 wf read
+			// 2, 3, 4, 5 wf push (Auto push)
+			// 6, 7, 8, 9, 10, 11 mmu cal
+
 			//Control setting
 			switch (i)
 			{
-			case 0:
-				//Systolic setup program
+			case 0: //UB Read & SS Program
+				ub.read_en = true;
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = matrix_size_in;
+
 				ss.read_en = true;
 				ss.push_en = false;
 				ss.switch_en = false;
-				//wf.push_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = matrix_size_in;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
 				break;
-			case 1:
-				//Weight FIFO advance
+
+			case 1: //WF Read
+				ub.read_en = false;
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = 0;
+
 				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
-				//wf.push_en = true;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = 0;
+
+				wf.push_en = false;
+				wf.read_en = true;
+				wf.dram_addr = 0;
+
 				break;
-			case 2:
-			case 4:
-			case 5:
-			case 6:
-				//NOP
-				ss.read_en = false;
-				ss.push_en = false;
-				ss.switch_en = false;
-				//wf.push_en = false;
-				break;
-			case 3:
-				//Systolic Setup advance
+
+			case 6: //MMU cal
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = 0;
+
 				ss.read_en = false;
 				ss.push_en = true;
 				ss.switch_en = true;
-				//wf.push_en = false;
-
-				//Setup accm addr
+				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
+				ss.matrix_size_in = matrix_size_in;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
+				break;
+
+			default: //NOP
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = 0;
+
+				ss.read_en = false;
+				ss.push_en = false;
+				ss.switch_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = 0;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
 				break;
 			}
 
 			//Register update
-			ss.read_vector_from_UB_when_enable();
+			ub.read_vector_from_HM_when_enable();
 			ss.push_vectors_to_MMU_when_enable();
+			ss.read_vector_from_UB_when_enable();
 			wf.push_weight_vector_to_MMU_when_en();
-			mmu.setup_array();
+			wf.read_matrix_from_DRAM_when_en();
+			acc.write_results();
 
 			//Combination Logic
+			mmu.setup_array();
 			mmu.calculate();
-
-			//Update accm
-			acc.write_results();
 
 			switch (i)
 			{
-			case 0:
-			case 1:
-			case 2:
-			case 3:
-				break;
-			case 4:
+			case 10:
 			{
 				int answer[2] = { 5,0 };
-				int dst[2];
-				acc.read(dst, 1);
-				for (int j = 0; j < matrix_size; j++)
+				int dst[4];
+				acc.read(dst, 0);
+				for (int j = 0; j < matrix_size_in; j++)
 					EXPECT_EQ(answer[j], dst[j]) << "Accm failed in step " << i << ", " << j;
 				break;
 			}
-			case 5:
+			case 11:
 			{
 				int answer[2] = { 8,13 };
-				int dst[2];
-				acc.read(dst, 2);
-				for (int j = 0; j < matrix_size; j++)
+				int dst[4];
+				acc.read(dst, 1);
+				for (int j = 0; j < matrix_size_in; j++)
 					EXPECT_EQ(answer[j], dst[j]) << "Accm failed in step " << i << ", " << j;
 				break;
 			}
-			case 6:
+			case 12:
 			{
 				int answer[2] = { 0,22 };
-				int dst[2];
-				acc.read(dst, 3);
-				for (int j = 0; j < matrix_size; j++)
+				int dst[4];
+				acc.read(dst, 2);
+				for (int j = 0; j < matrix_size_in; j++)
 					EXPECT_EQ(answer[j], dst[j]) << "Accm failed in step " << i << ", " << j;
 				break;
 			}

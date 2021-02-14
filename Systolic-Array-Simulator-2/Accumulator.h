@@ -21,9 +21,9 @@ public:
 		matrix_size = _matrix_size;
 		addr_size = _addr_size;
 
-		mem_block = new int32_t * [matrix_size];
-		for (int i = 0; i < matrix_size; i++)
-			mem_block[i] = new int32_t[addr_size];
+		mem_block = new int32_t * [addr_size];
+		for (int i = 0; i < addr_size; i++)
+			mem_block[i] = new int32_t[matrix_size];
 
 		mmu = NULL;
 	}
@@ -45,7 +45,7 @@ public:
 	{
 		for (int i = 0; i < matrix_size; i++)
 		{
-			mem_block[i][addr] = data[i];
+			mem_block[addr][i] = data[i];
 		}
 	}
 
@@ -53,13 +53,13 @@ public:
 	{
 		for (int i = 0; i < matrix_size; i++)
 		{
-			dst[i] = mem_block[i][addr];
+			dst[i] = mem_block[addr][i];
 		}
 	}
 
 	~Accumulator()
 	{
-		for (int i = 0; i < matrix_size; ++i)
+		for (int i = 0; i < addr_size; ++i)
 			delete[] mem_block[i];
 		delete[] mem_block;
 	}

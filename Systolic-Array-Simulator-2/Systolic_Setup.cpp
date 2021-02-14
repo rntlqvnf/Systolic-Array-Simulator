@@ -28,7 +28,7 @@ void Systolic_Setup::reset_internal_matrix()
 
 void Systolic_Setup::push_vectors_to_MMU_when_enable()
 {
-	push_vector_counter.count(DIAG_WIDTH(matrix_size), matrix_size_in, switch_en, acc_addr_in);
+	push_vector_counter.count(DIAG_WIDTH(matrix_size) + 1, matrix_size_in, switch_en, acc_addr_in);
 }
 
 void Systolic_Setup::reset_switch_vector()
