@@ -1161,6 +1161,12 @@ namespace UnitTest
 			}
 		}
 
+		int8_t answer[2][2] =
+		{
+			{5,8},
+			{13,22}
+		};
+
 		for (int i = 0; i < 15; i++)
 		{
 			// 0 1 ub read & ss program
@@ -1168,12 +1174,14 @@ namespace UnitTest
 			// 2, 3, 4, 5 wf push (Auto push)
 			// 6, 7, 8, 9, 10, 11 12 mmu cal(~11) and accm write(~12)
 			// 13, 14 act
+			// 15, 16 write to hm
 
 			//Control setting
 			switch (i)
 			{
 			case 0: //UB Read & SS Program
 				ub.read_en = true;
+				ub.write_en = false;
 				ub.addr = 0;
 				ub.hm_addr = 0;
 				ub.matrix_size_in = matrix_size_in;
@@ -1198,6 +1206,7 @@ namespace UnitTest
 
 			case 1: //WF Read
 				ub.read_en = false;
+				ub.write_en = false;
 				ub.addr = 0;
 				ub.hm_addr = 0;
 				ub.matrix_size_in = 0;
@@ -1221,6 +1230,8 @@ namespace UnitTest
 				break;
 
 			case 6: //MMU cal
+				ub.read_en = false;
+				ub.write_en = false;
 				ub.addr = 0;
 				ub.hm_addr = 0;
 				ub.matrix_size_in = 0;
@@ -1243,6 +1254,8 @@ namespace UnitTest
 
 				break;
 			case 13: //Act
+				ub.read_en = false;
+				ub.write_en = false;
 				ub.addr = 0;
 				ub.hm_addr = 0;
 				ub.matrix_size_in = 0;
@@ -1264,7 +1277,33 @@ namespace UnitTest
 				act.ub_addr = 2;
 
 				break;
+			case 15: //Write Host Mem
+				ub.read_en = false;
+				ub.write_en = true;
+				ub.addr = 2;
+				ub.hm_addr = 0;
+				ub.matrix_size_in = matrix_size_in;
+
+				ss.read_en = false;
+				ss.push_en = false;
+				ss.switch_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size_in = 0;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.dram_addr = 0;
+
+				act.act_en = false;
+				act.matrix_size_in = 0;
+				act.acc_addr = 0;
+				act.ub_addr = 0;
+
+				break;
 			default: //NOP
+				ub.read_en = false;
+				ub.write_en = false;
 				ub.addr = 0;
 				ub.hm_addr = 0;
 				ub.matrix_size_in = 0;
@@ -1289,6 +1328,7 @@ namespace UnitTest
 
 			//Register update
 			ub.read_vector_from_HM_when_enable();
+			ub.write_vector_to_HM_when_enable();
 			ss.push_vectors_to_MMU_when_enable();
 			ss.read_vector_from_UB_when_enable();
 			wf.push_weight_vector_to_MMU_when_en();
@@ -1299,19 +1339,31 @@ namespace UnitTest
 			//Combination Logic
 			mmu.setup_array();
 			mmu.calculate();
-		}
 
-		int8_t answer[2][2] =
-		{
-			{5,8},
-			{13,22}
-		};
-
-		for (int i = 0; i < matrix_size_in; i++)
-		{
-			for (int j = 0; j < matrix_size_in; j++)
+			switch (i)
 			{
-				EXPECT_EQ(answer[i][j], ub.mem_block[i + 2][j]) << "Module failed " << i << ", " << j;
+			case 14:
+			{
+				for (int i = 0; i < matrix_size_in; i++)
+				{
+					for (int j = 0; j < matrix_size_in; j++)
+					{
+						EXPECT_EQ(answer[i][j], ub.mem_block[i + 2][j]) << "Act failed " << i << ", " << j;
+					}
+				}
+				break;
+			}
+			case 16:
+			{
+				for (int i = 0; i < matrix_size_in; i++)
+				{
+					for (int j = 0; j < matrix_size_in; j++)
+					{
+						EXPECT_EQ(answer[i][j], hm.mem_block[i][j]) << "Host mem write failed " << i << ", " << j;
+					}
+				}
+				break;
+			}
 			}
 		}
 	}

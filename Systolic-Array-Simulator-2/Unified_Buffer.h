@@ -14,8 +14,10 @@ private:
 
 	//internal
 	Counter read_vector_counter;
+	Counter write_vector_counter;
 
 	void read_vector_from_HM(int, int, int, int, int);
+	void write_vector_to_HM(int, int, int, int, int);
 
 public:
 	int8_t** mem_block;
@@ -24,13 +26,15 @@ public:
 	int addr;
 	int hm_addr;
 	bool read_en;
+	bool write_en;
 	int matrix_size_in;
 
 	//other HW
 	Memory *hm;
 
 	Unified_Buffer(int matrix_size, int addr_size)
-		:read_vector_counter(&read_en)
+		:read_vector_counter(&read_en),
+		write_vector_counter(&write_en)
 	{
 		this->addr_size = addr_size; //col size
 		this->matrix_size = matrix_size; //row size
@@ -54,6 +58,15 @@ public:
 			bind(&Unified_Buffer::read_vector_from_HM, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5),
 			NULL
 		);
+
+		write_vector_counter.addHandlers(
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			bind(&Unified_Buffer::write_vector_to_HM, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5),
+			NULL
+		);
 	}
 
 	~Unified_Buffer()
@@ -64,5 +77,6 @@ public:
 	}
 
 	void read_vector_from_HM_when_enable();
+	void write_vector_to_HM_when_enable();
 };
 
