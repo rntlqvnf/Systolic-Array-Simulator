@@ -8,14 +8,15 @@
 class MMU
 {
 private:
+	//setting
+	int mmu_size;
+
 	void program_input_data();
 	void program_input_switch();
 	void program_input_write_things();
 	void program_output_to_input();
-public:
-	//setting
-	int mmu_size;
 
+public:
 	//output
 	int32_t* last_row_sum;
 

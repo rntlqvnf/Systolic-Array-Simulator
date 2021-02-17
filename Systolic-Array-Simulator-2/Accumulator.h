@@ -5,25 +5,26 @@
 
 class Accumulator
 {
-public:
+private:
 	//setting
-	int matrix_size;
+	int mmu_size;
 	int addr_size;
 
+public:
 	//internal
 	int32_t** mem_block;
 
 	//other HW
 	MMU* mmu;
 
-	Accumulator(int _matrix_size, int _addr_size)
+	Accumulator(int _mmu_size, int _addr_size)
 	{
-		matrix_size = _matrix_size;
+		mmu_size = _mmu_size;
 		addr_size = _addr_size;
 
 		mem_block = new int32_t * [addr_size];
 		for (int i = 0; i < addr_size; i++)
-			mem_block[i] = new int32_t[matrix_size];
+			mem_block[i] = new int32_t[mmu_size];
 
 		mmu = NULL;
 	}
@@ -47,7 +48,7 @@ public:
 
 	void accm(int32_t* data, int addr)
 	{
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < mmu_size; i++)
 		{
 			mem_block[addr][i] += data[i];
 		}
@@ -55,7 +56,7 @@ public:
 
 	void write(int32_t* data,int addr)
 	{
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < mmu_size; i++)
 		{
 			mem_block[addr][i] = data[i];
 		}
@@ -63,7 +64,7 @@ public:
 
 	void read(int32_t* dst, int addr)
 	{
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < mmu_size; i++)
 		{
 			dst[i] = mem_block[addr][i];
 		}

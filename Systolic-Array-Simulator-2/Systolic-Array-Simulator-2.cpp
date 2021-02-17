@@ -69,12 +69,12 @@ int main()
 
         ub.addr = decoder.values["ub.addr"];
         ub.hm_addr = decoder.values["ub.hm_addr"];
-        ub.matrix_size_in = decoder.values["ub.matrix_size_in"];
+        ub.matrix_size = decoder.values["ub.matrix_size"];
         ss.ub_addr = decoder.values["ss.ub_addr"];
         ss.acc_addr_in = decoder.values["ss.acc_addr_in"];
-        ss.matrix_size_in = decoder.values["ss.matrix_size_in"];
+        ss.matrix_size = decoder.values["ss.matrix_size"];
         wf.dram_addr = decoder.values["wf.dram_addr"];
-        act.matrix_size_in = decoder.values["act.matrix_size_in"];
+        act.matrix_size = decoder.values["act.matrix_size"];
         act.acc_addr = decoder.values["act.acc_addr"];
         act.ub_addr = decoder.values["act.ub_addr"];
 

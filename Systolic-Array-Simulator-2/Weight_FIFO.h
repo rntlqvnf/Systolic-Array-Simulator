@@ -25,6 +25,9 @@ struct WF_Inputs
 class Weight_FIFO
 {
 private:
+	//setting
+	int mmu_size;
+
 	//internal
 	Counter<WF_Inputs> push_matrix_counter;
 	Counter<WF_Inputs> read_matrix_counter;
@@ -35,9 +38,6 @@ private:
 	void read_matrix_when_max_step(int ,int, WF_Inputs);
 
 public:
-	//setting
-	int mmu_size;
-
 	//input
 	bool read_en;
 	bool push_en;

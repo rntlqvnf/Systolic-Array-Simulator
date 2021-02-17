@@ -29,7 +29,7 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 
 		values["ub.hm_addr"] = atoi(parsed_inst[1].c_str());
 		values["ub.addr"] = atoi(parsed_inst[2].c_str());
-		values["ub.matrix_size_in"] = atoi(parsed_inst[3].c_str());
+		values["ub.matrix_size"] = atoi(parsed_inst[3].c_str());
 	}
 	else if (opcode == "WHM")
 	{
@@ -40,7 +40,7 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 
 		values["ub.addr"] = atoi(parsed_inst[1].c_str());
 		values["ub.hm_addr"] = atoi(parsed_inst[2].c_str());
-		values["ub.matrix_size_in"] = atoi(parsed_inst[3].c_str());
+		values["ub.matrix_size"] = atoi(parsed_inst[3].c_str());
 	}
 	else if (opcode.find("RW") != string::npos)
 	{
@@ -58,7 +58,7 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 		}
 		
 		values["wf.dram_addr"] = atoi(parsed_inst[1].c_str());
-		values["wf.dram_addr"] = atoi(parsed_inst[2].c_str());
+		values["wf.matrix_size"] = atoi(parsed_inst[2].c_str());
 	}
 	else if (opcode.find("MMC") != string::npos)
 	{
@@ -92,7 +92,7 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 
 		values["ss.ub_addr"] = atoi(parsed_inst[1].c_str());
 		values["ss.acc_addr_in"] = atoi(parsed_inst[2].c_str());
-		values["ss.matrix_size_in"] = atoi(parsed_inst[3].c_str());
+		values["ss.matrix_size"] = atoi(parsed_inst[3].c_str());
 	}
 	else if (opcode == "ACT")
 	{
@@ -103,7 +103,7 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 
 		values["act.acc_addr"] = atoi(parsed_inst[1].c_str());
 		values["act.ub_addr"] = atoi(parsed_inst[2].c_str());
-		values["act.matrix_size_in"] = atoi(parsed_inst[3].c_str());
+		values["act.matrix_size"] = atoi(parsed_inst[3].c_str());
 	}
 	else if (opcode == "NOP")
 	{
@@ -138,13 +138,13 @@ void Decoder::reset() {
 
 	values["ub.addr"] = 0;
 	values["ub.hm_addr"] = 0;
-	values["ub.matrix_size_in"] = 0;
+	values["ub.matrix_size"] = 0;
 	values["ss.ub_addr"] = 0;
 	values["ss.acc_addr_in"] = 0;
-	values["ss.matrix_size_in"] = 0;
+	values["ss.matrix_size"] = 0;
 	values["wf.dram_addr"] = 0;
 	values["wf.matrix_size"] = 0;
-	values["act.matrix_size_in"] = 0;
+	values["act.matrix_size"] = 0;
 	values["act.acc_addr"] = 0;
 	values["act.ub_addr"] = 0;
 }

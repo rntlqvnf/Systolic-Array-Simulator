@@ -5,10 +5,11 @@
 
 class MAC
 {
-public:
+private:
 	//setting
 	int mmu_size;
 
+public:
 	//input
 	int8_t data_in;
 	int8_t weight_in;
