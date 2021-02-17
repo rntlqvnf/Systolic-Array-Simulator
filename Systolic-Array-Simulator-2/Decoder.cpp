@@ -42,37 +42,53 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 		values["ub.hm_addr"] = atoi(parsed_inst[2].c_str());
 		values["ub.matrix_size_in"] = atoi(parsed_inst[3].c_str());
 	}
-	else if (opcode == "RW")
+	else if (opcode.find("RW") != string::npos)
 	{
-		//RW addr
-		assert(parsed_inst.size() == 2);
+		//RW.{U} addr N
+		//Unfold
+		assert(parsed_inst.size() == 3);
 
+		string option = opcode.length() > 3 ? opcode.substr(3) : "";
+
+		//default
 		controls["wf.read_en"] = true;
+		if (option.find("U") != string::npos)
+		{
+			controls["wf.unfold_en"] = true;
+		}
 		
 		values["wf.dram_addr"] = atoi(parsed_inst[1].c_str());
+		values["wf.dram_addr"] = atoi(parsed_inst[2].c_str());
 	}
-	else if (opcode == "MMC.S")
+	else if (opcode.find("MMC") != string::npos)
 	{
-		//MMC.S src dst N
-		//If switch, weight push
+		//Matrix Multiply / Convolution
+		//MMC.{SOU} src dst N
+		//Switch, Overwrite, Unfold
+
 		assert(parsed_inst.size() == 4);
 
+		string option = opcode.length() > 4 ? opcode.substr(4) : "";
+
+		//default
 		controls["ss.read_en"] = true;
 		controls["ss.push_en"] = true;
-		controls["ss.switch_en"] = true;
-		controls["wf.push_en"] = true;
+		//S
+		if (option.find("S") != string::npos)
+		{
+			controls["ss.switch_en"] = true;
+			controls["wf.push_en"] = true;
+		}
+		//O
+		if (option.find("O") != string::npos)
+		{
+			controls["ss.overwrite_en"] = true;
+		}
+		//C
+		if (option.find("U") != string::npos)
+		{
 
-		values["ss.ub_addr"] = atoi(parsed_inst[1].c_str());
-		values["ss.acc_addr_in"] = atoi(parsed_inst[2].c_str());
-		values["ss.matrix_size_in"] = atoi(parsed_inst[3].c_str());
-	}
-	else if (opcode == "MMC.O")
-	{
-		//MMC.O src dst N
-		assert(parsed_inst.size() == 4);
-
-		controls["ss.read_en"] = true;
-		controls["ss.push_en"] = true;
+		}
 
 		values["ss.ub_addr"] = atoi(parsed_inst[1].c_str());
 		values["ss.acc_addr_in"] = atoi(parsed_inst[2].c_str());
@@ -113,8 +129,10 @@ void Decoder::reset() {
 	controls["ss.read_en"] = false;
 	controls["ss.push_en"] = false;
 	controls["ss.switch_en"] = false;
+	controls["ss.overwrite_en"] = false;
 	controls["wf.push_en"] = false;
 	controls["wf.read_en"] = false;
+	controls["wf.unfold_en"] = false;
 	controls["act.act_en"] = false;
 	controls["halt"] = false;
 
@@ -125,6 +143,7 @@ void Decoder::reset() {
 	values["ss.acc_addr_in"] = 0;
 	values["ss.matrix_size_in"] = 0;
 	values["wf.dram_addr"] = 0;
+	values["wf.matrix_size"] = 0;
 	values["act.matrix_size_in"] = 0;
 	values["act.acc_addr"] = 0;
 	values["act.ub_addr"] = 0;

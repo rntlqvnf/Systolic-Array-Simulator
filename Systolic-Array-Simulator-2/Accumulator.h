@@ -33,11 +33,23 @@ public:
 		assert(mmu != NULL);
 
 		bool write_en = mmu->ss->acc_write_en;
+		bool overwrite_en = mmu->ss->overwrite_en;
 		int addr = mmu->ss->acc_addr_out;
 
 		if (write_en)
 		{
-			write(mmu->last_row_sum, addr);
+			if (overwrite_en)
+				write(mmu->last_row_sum, addr);
+			else
+				accm(mmu->last_row_sum, addr);
+		}
+	}
+
+	void accm(int32_t* data, int addr)
+	{
+		for (int i = 0; i < matrix_size; i++)
+		{
+			mem_block[addr][i] += data[i];
 		}
 	}
 

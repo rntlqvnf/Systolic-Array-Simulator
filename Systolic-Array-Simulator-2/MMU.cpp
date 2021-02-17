@@ -2,17 +2,17 @@
 
 void MMU::calculate()
 {
-	for (int i = 0; i < matrix_size; i++)
+	for (int i = 0; i < mmu_size; i++)
 	{
-		for (int j = 0; j < matrix_size; j++)
+		for (int j = 0; j < mmu_size; j++)
 		{
 			mac_array[i][j].calculate();
 		}
 	}
 
-	for (int i = 0;i < matrix_size; i++)
+	for (int i = 0;i < mmu_size; i++)
 	{
-		last_row_sum[i] = mac_array[matrix_size - 1][i].sum_out;
+		last_row_sum[i] = mac_array[mmu_size - 1][i].sum_out;
 ;	}
 }
 
@@ -26,11 +26,11 @@ void MMU::setup_array()
 
 void MMU::program_output_to_input()
 {
-	for (int i = 0; i < matrix_size; i++)
+	for (int i = 0; i < mmu_size; i++)
 	{
-		for (int j = 0;j < matrix_size; j++)
+		for (int j = 0;j < mmu_size; j++)
 		{
-			if (i != matrix_size - 1)
+			if (i != mmu_size - 1)
 			{
 				mac_array[i + 1][j].weight_in = mac_array[i][j].weight_out;
 				mac_array[i + 1][j].weight_tag_in = mac_array[i][j].weight_tag_out;
@@ -38,7 +38,7 @@ void MMU::program_output_to_input()
 				mac_array[i + 1][j].sum_in = mac_array[i][j].sum_out;
 			}
 
-			if(j != matrix_size -1)
+			if(j != mmu_size -1)
 				mac_array[i][j + 1].data_in = mac_array[i][j].data_out;
 		}
 	}
@@ -46,7 +46,7 @@ void MMU::program_output_to_input()
 
 void MMU::program_input_data()
 {
-	for (int i = 0; i < matrix_size; i++)
+	for (int i = 0; i < mmu_size; i++)
 	{
 		mac_array[i][0].data_in = ss->input_datas[i];
 	}
@@ -54,9 +54,9 @@ void MMU::program_input_data()
 
 void MMU::program_input_switch()
 {
-	for (int i = 0; i < matrix_size; i++)
+	for (int i = 0; i < mmu_size; i++)
 	{
-		for (int j = 0;j < matrix_size; j++)
+		for (int j = 0;j < mmu_size; j++)
 		{
 			mac_array[i][j].switch_in = ss->switch_weights[i];
 		}
@@ -72,7 +72,7 @@ void MMU::program_input_write_things()
 		prog_step = 0;
 	}
 	
-	for (int i = 0; i < matrix_size; i++)
+	for (int i = 0; i < mmu_size; i++)
 	{
 		mac_array[0][i].write_en_in = progressing;
 		mac_array[0][i].weight_tag_in = prog_step;
@@ -82,7 +82,7 @@ void MMU::program_input_write_things()
 	if (progressing)
 	{
 		prog_step++;
-		if (prog_step == matrix_size)
+		if (prog_step == mmu_size)
 		{
 			progressing = false;
 			prog_step = 0;

@@ -14,7 +14,7 @@ private:
 	void program_output_to_input();
 public:
 	//setting
-	int matrix_size;
+	int mmu_size;
 
 	//output
 	int32_t* last_row_sum;
@@ -28,21 +28,21 @@ public:
 	Systolic_Setup* ss;
 	Weight_FIFO* wf;
 
-	MMU(int _matrix_size)
+	MMU(int _mmu_size)
 	{
-		matrix_size = _matrix_size;
+		mmu_size = _mmu_size;
 
-		last_row_sum = new int32_t[matrix_size];
+		last_row_sum = new int32_t[mmu_size];
 
-		mac_array = new MAC * [matrix_size];
-		for (int i = 0; i < matrix_size; i++)
-			mac_array[i] = new MAC[matrix_size];
+		mac_array = new MAC * [mmu_size];
+		for (int i = 0; i < mmu_size; i++)
+			mac_array[i] = new MAC[mmu_size];
 
-		for (int i = 0; i < matrix_size; i++)
+		for (int i = 0; i < mmu_size; i++)
 		{
-			for (int j = 0; j < matrix_size; j++)
+			for (int j = 0; j < mmu_size; j++)
 			{
-				mac_array[i][j] = MAC(matrix_size);
+				mac_array[i][j] = MAC(mmu_size);
 			}
 		}
 		progressing = false;
@@ -54,7 +54,7 @@ public:
 
 	~MMU()
 	{
-		for (int i = 0; i < matrix_size; ++i)
+		for (int i = 0; i < mmu_size; ++i)
 			delete[] mac_array[i];
 		delete[] mac_array;
 	}

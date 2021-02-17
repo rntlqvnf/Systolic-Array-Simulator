@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <assert.h>
+#include <iostream>
 
 //Pass line from outer
 //Parse and generate control signals

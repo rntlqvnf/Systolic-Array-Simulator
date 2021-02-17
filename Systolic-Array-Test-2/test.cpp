@@ -460,9 +460,10 @@ namespace UnitTest
 	}
 
 	TEST(WeightFIFOTest, DramReadCycleTest) {
+		int mmu_size = 10;
 		int matrix_size = 10;
-		Memory dram(matrix_size, 50);
-		Weight_FIFO wf(matrix_size);
+		Memory dram(mmu_size, 50);
+		Weight_FIFO wf(mmu_size);
 
 		wf.dram = &dram;
 
@@ -476,12 +477,63 @@ namespace UnitTest
 
 		wf.read_en = true;
 		wf.dram_addr = 0;
+		wf.matrix_size = matrix_size;
 
 		wf.read_matrix_from_DRAM_when_en();
 		EXPECT_TRUE(wf.weight_queue.empty());
 
 		wf.read_matrix_from_DRAM_when_en();
 		EXPECT_FALSE(wf.weight_queue.empty());
+
+		matrix_size = 5;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				dram.mem_block[i][j] = i + j;
+			}
+		}
+
+		wf.read_en = true;
+		wf.dram_addr = 0;
+		wf.matrix_size = matrix_size;
+
+		wf.read_matrix_from_DRAM_when_en();
+		EXPECT_FALSE(wf.weight_queue.empty());
+	}
+
+	TEST(WeightFIFOTest, UnfoldWeightTest) {
+		int mmu_size = 10;
+		int matrix_size = 3;
+		Memory dram(mmu_size, 50);
+		Weight_FIFO wf(mmu_size);
+
+		wf.dram = &dram;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				dram.mem_block[i][j] = i + j;
+			}
+		}
+
+		wf.read_en = true;
+		wf.unfold_en = true;
+		wf.dram_addr = 0;
+		wf.matrix_size = matrix_size;
+
+		wf.read_matrix_from_DRAM_when_en();
+		ASSERT_FALSE(wf.weight_queue.empty());
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				EXPECT_EQ(dram.mem_block[i][j], wf.weight_queue.front()[0][i * matrix_size + j]);
+			}
+		}
 	}
 
 	TEST(UnifiedBufferTest, ReadHMTest)
@@ -674,6 +726,7 @@ namespace UnitTest
 				ss.switch_en = false;
 				wf.read_en = false;
 				wf.push_en = false;
+				wf.unfold_en = false;
 				break;
 			case 1:
 				//Weight FIFO Read
@@ -682,6 +735,7 @@ namespace UnitTest
 				ss.switch_en = false;
 				wf.read_en = true;
 				wf.push_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 				break;
 			case 2:
@@ -691,14 +745,17 @@ namespace UnitTest
 				ss.switch_en = false;
 				wf.read_en = false;
 				wf.push_en = false;
+				wf.unfold_en = false;
 				break;
 			case 3:
 				//Systolic Setup advance
 				ss.read_en = false;
 				ss.push_en = true;
 				ss.switch_en = true;
+				ss.overwrite_en = true;
 				wf.read_en = false;
 				wf.push_en = false;
+				wf.unfold_en = false;
 				break;
 			}
 
@@ -807,6 +864,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -826,6 +884,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = true;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -838,12 +897,14 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.push_en = true;
 				ss.switch_en = true;
+				ss.overwrite_en = true;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size_in = matrix_size_in;
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -862,6 +923,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -927,6 +989,26 @@ namespace UnitTest
 		{
 			EXPECT_EQ(input[i], output[i]);
 ;		}
+	}
+
+	TEST(AccumTest, AccumulateTest) {
+		int matrix_size = 4;
+		Accumulator accm(matrix_size, 12);
+
+		int32_t input[4] = { 1,2,3,4 };
+		int32_t input_2[4] = { 2,3,4,5 };
+		int32_t ans[4] = { 3,5,7,9 };
+
+		accm.write(input, 0);
+		accm.accm(input_2, 0);
+
+		int32_t* output;
+		output = new int32_t[4];
+		accm.read(output, 0);
+		for (int i = 0; i < matrix_size; i++)
+		{
+			EXPECT_EQ(ans[i], output[i]);
+		}
 	}
 
 	TEST(AccumTest, TwoMacAccmResultTest) {
@@ -1005,6 +1087,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -1024,6 +1107,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = true;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -1036,12 +1120,14 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.push_en = true;
 				ss.switch_en = true;
+				ss.overwrite_en = true;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size_in = matrix_size_in;
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -1060,6 +1146,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				break;
@@ -1197,6 +1284,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				act.act_en = false;
@@ -1222,6 +1310,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = true;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				act.act_en = false;
@@ -1241,12 +1330,14 @@ namespace UnitTest
 				ss.read_en = true;
 				ss.push_en = true;
 				ss.switch_en = true;
+				ss.overwrite_en = true;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size_in = matrix_size_in;
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				act.act_en = false;
@@ -1271,6 +1362,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				act.act_en = true;
@@ -1295,6 +1387,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				act.act_en = false;
@@ -1319,6 +1412,7 @@ namespace UnitTest
 
 				wf.push_en = false;
 				wf.read_en = false;
+				wf.unfold_en = false;
 				wf.dram_addr = 0;
 
 				act.act_en = false;
@@ -1386,8 +1480,10 @@ namespace UnitTest
 		EXPECT_FALSE(decoder.controls["ss.read_en"]);
 		EXPECT_FALSE(decoder.controls["ss.push_en"]);
 		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
 		EXPECT_FALSE(decoder.controls["wf.push_en"]);
 		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
 		EXPECT_FALSE(decoder.controls["act.act_en"]);
 		EXPECT_FALSE(decoder.controls["halt"]);
 
@@ -1403,63 +1499,16 @@ namespace UnitTest
 		EXPECT_FALSE(decoder.controls["ss.read_en"]);
 		EXPECT_FALSE(decoder.controls["ss.push_en"]);
 		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
 		EXPECT_FALSE(decoder.controls["wf.push_en"]);
 		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
 		EXPECT_FALSE(decoder.controls["act.act_en"]);
 		EXPECT_FALSE(decoder.controls["halt"]);
 
 		EXPECT_EQ(0, decoder.values["ub.addr"]);
 		EXPECT_EQ(1, decoder.values["ub.hm_addr"]);
 		EXPECT_EQ(8, decoder.values["ub.matrix_size_in"]);
-
-		instruction = "RW 2";
-		decoder.parse(instruction, delimiter);
-
-		EXPECT_FALSE(decoder.controls["ub.read_en"]);
-		EXPECT_FALSE(decoder.controls["ub.write_en"]);
-		EXPECT_FALSE(decoder.controls["ss.read_en"]);
-		EXPECT_FALSE(decoder.controls["ss.push_en"]);
-		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
-		EXPECT_FALSE(decoder.controls["wf.push_en"]);
-		EXPECT_TRUE(decoder.controls["wf.read_en"]);
-		EXPECT_FALSE(decoder.controls["act.act_en"]);
-		EXPECT_FALSE(decoder.controls["halt"]);
-
-		EXPECT_EQ(2, decoder.values["wf.dram_addr"]);
-
-		instruction = "MMC.S 1 2 8";
-		decoder.parse(instruction, delimiter);
-
-		EXPECT_FALSE(decoder.controls["ub.read_en"]);
-		EXPECT_FALSE(decoder.controls["ub.write_en"]);
-		EXPECT_TRUE(decoder.controls["ss.read_en"]);
-		EXPECT_TRUE(decoder.controls["ss.push_en"]);
-		EXPECT_TRUE(decoder.controls["ss.switch_en"]);
-		EXPECT_TRUE(decoder.controls["wf.push_en"]);
-		EXPECT_FALSE(decoder.controls["wf.read_en"]);
-		EXPECT_FALSE(decoder.controls["act.act_en"]);
-		EXPECT_FALSE(decoder.controls["halt"]);
-
-		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
-		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
-		EXPECT_EQ(8, decoder.values["ss.matrix_size_in"]);
-
-		instruction = "MMC.O 1 2 8";
-		decoder.parse(instruction, delimiter);
-
-		EXPECT_FALSE(decoder.controls["ub.read_en"]);
-		EXPECT_FALSE(decoder.controls["ub.write_en"]);
-		EXPECT_TRUE(decoder.controls["ss.read_en"]);
-		EXPECT_TRUE(decoder.controls["ss.push_en"]);
-		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
-		EXPECT_FALSE(decoder.controls["wf.push_en"]);
-		EXPECT_FALSE(decoder.controls["wf.read_en"]);
-		EXPECT_FALSE(decoder.controls["act.act_en"]);
-		EXPECT_FALSE(decoder.controls["halt"]);
-
-		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
-		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
-		EXPECT_EQ(8, decoder.values["ss.matrix_size_in"]);
 
 		instruction = "ACT 3 4 8";
 		decoder.parse(instruction, delimiter);
@@ -1469,8 +1518,10 @@ namespace UnitTest
 		EXPECT_FALSE(decoder.controls["ss.read_en"]);
 		EXPECT_FALSE(decoder.controls["ss.push_en"]);
 		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
 		EXPECT_FALSE(decoder.controls["wf.push_en"]);
 		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
 		EXPECT_TRUE(decoder.controls["act.act_en"]);
 		EXPECT_FALSE(decoder.controls["halt"]);
 
@@ -1486,8 +1537,10 @@ namespace UnitTest
 		EXPECT_FALSE(decoder.controls["ss.read_en"]);
 		EXPECT_FALSE(decoder.controls["ss.push_en"]);
 		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
 		EXPECT_FALSE(decoder.controls["wf.push_en"]);
 		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
 		EXPECT_FALSE(decoder.controls["act.act_en"]);
 		EXPECT_TRUE(decoder.controls["halt"]);
 
@@ -1499,10 +1552,134 @@ namespace UnitTest
 		EXPECT_FALSE(decoder.controls["ss.read_en"]);
 		EXPECT_FALSE(decoder.controls["ss.push_en"]);
 		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
 		EXPECT_FALSE(decoder.controls["wf.push_en"]);
 		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
 		EXPECT_FALSE(decoder.controls["act.act_en"]);
 		EXPECT_TRUE(decoder.controls["halt"]);
+	}
+
+	TEST(DecoderTest, MMCParseTest) {
+		Decoder decoder;
+
+		string delimiter(" ");
+		string instruction = "MMC.S 1 2 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_TRUE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_TRUE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(8, decoder.values["ss.matrix_size_in"]);
+
+		instruction = "MMC.O 1 2 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_TRUE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(8, decoder.values["ss.matrix_size_in"]);
+
+		instruction = "MMC 1 2 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(8, decoder.values["ss.matrix_size_in"]);
+
+		instruction = "MMC.SO 2 3 9";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_TRUE(decoder.controls["ss.switch_en"]);
+		EXPECT_TRUE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_TRUE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(2, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(3, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(9, decoder.values["ss.matrix_size_in"]);
+	}
+
+	TEST(DecoderTest, RWParseTest) {
+		Decoder decoder;
+
+		string delimiter(" ");
+		string instruction = "RW 2 3";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_TRUE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(2, decoder.values["wf.dram_addr"]);
+		EXPECT_EQ(3, decoder.values["wf.matrix_size"]);
+
+		instruction = "RW.U 2 4";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_FALSE(decoder.controls["ss.read_en"]);
+		EXPECT_FALSE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_TRUE(decoder.controls["wf.read_en"]);
+		EXPECT_TRUE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(2, decoder.values["wf.dram_addr"]);
+		EXPECT_EQ(4, decoder.values["wf.matrix_size"]);
 	}
 }
 

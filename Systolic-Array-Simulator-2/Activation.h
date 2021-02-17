@@ -2,15 +2,22 @@
 
 #include "Accumulator.h"
 
+struct Act_Inputs
+{
+	int matrix_size;
+	int acc_addr;
+	int ub_addr;
+};
+
 class Activation
 {
 private:
-	Counter act_vector_counter; 
-	int matrix_size;
+	Counter<Act_Inputs> act_vector_counter; 
+	int mmu_size;
 
 public:
 	//input
-	int matrix_size_in;
+	int matrix_size;
 	int acc_addr;
 	int ub_addr;
 	bool act_en;
@@ -21,42 +28,40 @@ public:
 	//other HW
 	Accumulator* acc;
 
-	Activation(int _matrix_size)
+	Activation(int _mmu_size)
 		:
 		act_vector_counter(&act_en)
 	{
-		matrix_size = _matrix_size;
+		mmu_size = _mmu_size;
 
-		matrix_size_in = matrix_size;
+		matrix_size = mmu_size;
 		acc_addr = 0;
 		ub_addr = 0;
 		act_en = false;
 
-		vec = new int32_t[matrix_size];
+		vec = new int32_t[mmu_size];
 
 		acc = NULL;
 
 		act_vector_counter.addHandlers(
 			NULL,
-			NULL,
-			NULL,
-			NULL,
-			bind(&Activation::read_activate_write, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5),
+			bind(&Activation::read_activate_write, this, placeholders::_1, placeholders::_2, placeholders::_3),
 			NULL
 		);
 	}
 
 	void do_activation_and_write_to_UB()
 	{
-		act_vector_counter.count(matrix_size_in, matrix_size_in, acc_addr, ub_addr);
+		Act_Inputs inputs = { matrix_size, acc_addr, ub_addr };
+		act_vector_counter.count(matrix_size, inputs);
 	}
 
 private:
-	void read_activate_write(int step, int max_step, int matrix_size, int acc_addr, int ub_addr)
+	void read_activate_write(int step, int max_step, Act_Inputs data)
 	{
-		read_vector_from_UB(step, max_step, matrix_size, acc_addr);
-		activate(matrix_size);
-		write_to_UB(step, max_step, matrix_size, ub_addr);
+		read_vector_from_UB(step, max_step, data.matrix_size, data.acc_addr);
+		activate(data.matrix_size);
+		write_to_UB(step, max_step, data.matrix_size, data.ub_addr);
 	}
 	void read_vector_from_UB(int step, int max_step, int matrix_size, int acc_addr)
 	{

@@ -7,7 +7,7 @@ class MAC
 {
 public:
 	//setting
-	int matrix_size;
+	int mmu_size;
 
 	//input
 	int8_t data_in;
@@ -30,10 +30,10 @@ public:
 
 	MAC() {}
 
-	MAC(int _matrix_size) :
+	MAC(int _mmu_size) :
 		weight_buf{}
 	{
-		matrix_size = _matrix_size;
+		mmu_size = _mmu_size;
 
 		data_in = 0;
 		weight_in = 0;

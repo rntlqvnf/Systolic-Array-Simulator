@@ -61,8 +61,10 @@ int main()
         ss.read_en = decoder.controls["ss.read_en"];
         ss.push_en = decoder.controls["ss.push_en"];
         ss.switch_en = decoder.controls["ss.switch_en"];
+        ss.overwrite_en = decoder.controls["ss.overwrite_en"];
         wf.push_en = decoder.controls["wf.push_en"];
         wf.read_en = decoder.controls["wf.read_en"];
+        wf.unfold_en = decoder.controls["wf.unfold_en"];
         act.act_en = decoder.controls["act.act_en"];
 
         ub.addr = decoder.values["ub.addr"];
@@ -98,7 +100,7 @@ int main()
 
         cycle++;
         cout << "[[Cycle " << cycle << "]]" << endl;
-        print_mem_block("Unified Buffer", ub.mem_block);
+        print_mem_block("Host Memory", hm.mem_block);
     }
 }
 

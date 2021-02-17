@@ -18,7 +18,7 @@ void Weight_FIFO::pop_ifn_start()
 
 		weight_queue.pop();
 
-		for (int i = 0; i < matrix_size; ++i)
+		for (int i = 0; i < mmu_size; ++i)
 			delete[] mat_to_remove[i];
 		delete[] mat_to_remove;
 	}
@@ -27,39 +27,47 @@ void Weight_FIFO::pop_ifn_start()
 void Weight_FIFO::read_matrix_from_DRAM_when_en()
 {
 	int max_count = (matrix_size * matrix_size + 64 - 1) / 64;
-	read_matrix_counter.count(max_count, matrix_size, dram_addr, 0);
+	WF_Inputs inputs = { matrix_size, dram_addr };
+	read_matrix_counter.count(max_count, inputs);
 }
 
 void Weight_FIFO::push_weight_vector_to_MMU_when_en()
 {
+	WF_Inputs inputs = { mmu_size, 0 };
 	if(state == STATE::READ_END)
-		push_matrix_counter.count(true, matrix_size, matrix_size, 0, 0);
+		push_matrix_counter.count(true, mmu_size, inputs);
 	else
-		push_matrix_counter.count(matrix_size, matrix_size, 0, 0);
+		push_matrix_counter.count(mmu_size, inputs);
 }
 
-void Weight_FIFO::transpose_and_push(int step, int max_step, int matrix_size, int addr)
+void Weight_FIFO::transpose_and_push(int step, int max_step, WF_Inputs data)
 {
 	if (!weight_queue.empty())
 	{
-		for (int i = 0; i < matrix_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
+		for (int i = 0; i < mmu_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
 			input_weights[i] = weight_queue.front()[i][max_step - step - 1];
 	}
 }
 
-void Weight_FIFO::read_matrix_when_max_step(int step, int max_step, int matrix_size, int addr)
+void Weight_FIFO::read_matrix_when_max_step(int step, int max_step, WF_Inputs data)
 {
 	if (step == max_step - 1)
 	{
-		int8_t** mat = new int8_t * [matrix_size];
-		for (int i = 0; i < matrix_size; i++)
-			mat[i] = new int8_t[matrix_size];
+		assert(mmu_size >= data.matrix_size);
+		if (unfold_en) assert(mmu_size >= data.matrix_size * data.matrix_size);
 
-		for (int i = 0; i < matrix_size; i++)
+		int8_t** mat = new int8_t * [mmu_size];
+		for (int i = 0; i < mmu_size; i++)
+			mat[i] = new int8_t[mmu_size];
+
+		for (int i = 0; i < data.matrix_size; i++)
 		{
-			for (int j = 0; j < matrix_size; j++)
+			for (int j = 0; j < data.matrix_size; j++)
 			{
-				mat[i][j] = dram->mem_block[addr + i][j];
+				if(unfold_en)
+					mat[0][data.matrix_size * i + j] = dram->mem_block[data.dram_addr + i][j];
+				else
+					mat[i][j] = dram->mem_block[data.dram_addr + i][j];
 			}
 		}
 

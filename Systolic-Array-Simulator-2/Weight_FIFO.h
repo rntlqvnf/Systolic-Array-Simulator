@@ -5,6 +5,7 @@
 #include <queue>
 #include "Memory.h"
 #include "Counter.h"
+#include <assert.h>
 
 using namespace std;
 
@@ -15,25 +16,33 @@ enum class STATE
 	PUSH_END
 };
 
+struct WF_Inputs
+{
+	int matrix_size;
+	int dram_addr;
+};
+
 class Weight_FIFO
 {
 private:
 	//internal
-	Counter push_matrix_counter;
-	Counter read_matrix_counter;
+	Counter<WF_Inputs> push_matrix_counter;
+	Counter<WF_Inputs> read_matrix_counter;
 	STATE state;
 
 	void push_when_startup();
-	void transpose_and_push(int, int, int, int);
-	void read_matrix_when_max_step(int ,int, int, int);
+	void transpose_and_push(int, int, WF_Inputs);
+	void read_matrix_when_max_step(int ,int, WF_Inputs);
 
 public:
 	//setting
-	int matrix_size;
+	int mmu_size;
 
 	//input
 	bool read_en;
 	bool push_en;
+	bool unfold_en;
+	int matrix_size;
 	int dram_addr;
 
 	//output
@@ -46,38 +55,34 @@ public:
 	//other HW
 	Memory* dram;
 	
-	Weight_FIFO(int _matrix_size)
+	Weight_FIFO(int _mmu_size)
 		: 
 		push_matrix_counter(&push_en),
 		read_matrix_counter(&read_en), //64 bytes
 		state(STATE::INITIAL)
 	{
-		matrix_size = _matrix_size;
+		mmu_size = _mmu_size;
 
 		read_en = false;
 		push_en = false;
+		unfold_en = false;
+		matrix_size = mmu_size;
 		dram_addr = 0;
 
-		input_weights = new int8_t[matrix_size];
+		input_weights = new int8_t[mmu_size];
 		write_en = false;
-		std::fill(input_weights, input_weights + matrix_size, 0);
+		std::fill(input_weights, input_weights + mmu_size, 0);
 		dram = NULL;
 
 		push_matrix_counter.addHandlers(
 			bind(&Weight_FIFO::pop_ifn_start, this),
-			NULL,
-			NULL,
-			bind(&Weight_FIFO::transpose_and_push, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
-			NULL,
+			bind(&Weight_FIFO::transpose_and_push, this, placeholders::_1, placeholders::_2, placeholders::_3),
 			NULL
 		);
 
 		read_matrix_counter.addHandlers(
 			NULL,
-			NULL,
-			NULL,
-			bind(&Weight_FIFO::read_matrix_when_max_step, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
-			NULL,
+			bind(&Weight_FIFO::read_matrix_when_max_step, this, placeholders::_1, placeholders::_2, placeholders::_3),
 			bind(&Weight_FIFO::push_when_startup, this)
 		);
 	}
