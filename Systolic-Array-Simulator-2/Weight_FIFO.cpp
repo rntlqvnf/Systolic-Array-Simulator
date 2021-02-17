@@ -5,7 +5,7 @@ void Weight_FIFO::push(int8_t** mat)
 	weight_queue.push(mat);
 }
 
-void Weight_FIFO::pop_ifn_start()
+void Weight_FIFO::pop_and_set_size_ifn_start(WF_Inputs data)
 {
 	write_en = true;
 	if (state == STATE::READ_END)
@@ -21,6 +21,9 @@ void Weight_FIFO::pop_ifn_start()
 		for (int i = 0; i < mmu_size; ++i)
 			delete[] mat_to_remove[i];
 		delete[] mat_to_remove;
+
+		if(wsreg != NULL)
+			wsreg->set_size(matrix_size);
 	}
 }
 

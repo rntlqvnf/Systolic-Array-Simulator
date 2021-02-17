@@ -5,6 +5,7 @@
 #include <queue>
 #include "Memory.h"
 #include "Counter.h"
+#include "Weight_Size_Reg.h"
 #include <assert.h>
 
 using namespace std;
@@ -54,6 +55,7 @@ public:
 
 	//other HW
 	Memory* dram;
+	Weight_Size_Reg* wsreg;
 	
 	Weight_FIFO(int _mmu_size)
 		: 
@@ -73,9 +75,10 @@ public:
 		write_en = false;
 		std::fill(input_weights, input_weights + mmu_size, 0);
 		dram = NULL;
+		wsreg = NULL;
 
 		push_matrix_counter.addHandlers(
-			bind(&Weight_FIFO::pop_ifn_start, this),
+			bind(&Weight_FIFO::pop_and_set_size_ifn_start, this, placeholders::_1),
 			bind(&Weight_FIFO::transpose_and_push, this, placeholders::_1, placeholders::_2, placeholders::_3),
 			NULL
 		);
@@ -93,7 +96,7 @@ public:
 	}
 	
 	void push(int8_t** mat);
-	void pop_ifn_start();
+	void pop_and_set_size_ifn_start(WF_Inputs);
 	void read_matrix_from_DRAM_when_en();
 	void push_weight_vector_to_MMU_when_en();
 };

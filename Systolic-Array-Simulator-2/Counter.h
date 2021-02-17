@@ -12,7 +12,7 @@ private:
 	bool* enable;
 	T data;
 
-	function<void(void)> on_start;
+	function<void(T)> on_start;
 	function<void(int, int, T)> on_count;
 	function<void(void)> on_end;
 
@@ -37,7 +37,7 @@ public:
 	}
 
 	void addHandlers(
-		function<void(void)> on_start,
+		function<void(T)> on_start,
 		function<void(int, int, T)> on_count,
 		function<void(void)> on_end)
 	{
@@ -57,7 +57,7 @@ public:
 			count_step = 0;
 
 			if (on_start != NULL)
-				on_start();
+				on_start(data);
 		}
 
 		if (counting)

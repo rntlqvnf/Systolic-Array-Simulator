@@ -2,7 +2,7 @@
 
 void Systolic_Setup::read_vector_from_UB_when_enable()
 {
-	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, false };
+	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en };
 	read_vector_counter.count(matrix_size, input);
 }
 
@@ -19,21 +19,26 @@ void Systolic_Setup::read_vector_from_UB(int step, int max_step, SS_Inputs data)
 	}
 }
 
-void Systolic_Setup::reset_internal_matrix()
+void Systolic_Setup::reset_matrix_and_wsreg(SS_Inputs datas)
 {
 	for (int i = 0; i < mmu_size; i++)
 	{
 		std::fill(diagonalized_matrix[i], diagonalized_matrix[i] + DIAG_WIDTH(mmu_size), (int8_t)0);
 	}
+	if (datas.switch_en)
+	{
+		if (wsreg != NULL)
+			wsreg->switch_size();
+	}
 }
 
 void Systolic_Setup::push_vectors_to_MMU_when_enable()
 {
-	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, false };
+	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en };
 	push_vector_counter.count(DIAG_WIDTH(mmu_size) + 1, input);
 }
 
-void Systolic_Setup::reset_switch_vector()
+void Systolic_Setup::reset_switch_vector(SS_Inputs datas)
 {
 	std::fill(switch_weights, switch_weights + mmu_size, false);
 }

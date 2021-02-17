@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <algorithm>
 #include "Unified_Buffer.h"
+#include "Weight_Size_Reg.h"
 
 #define DIAG_WIDTH(x) ((2 * x) - 1)
 
@@ -22,10 +23,10 @@ private:
 	Counter<SS_Inputs> push_vector_counter;
 	Counter<SS_Inputs> read_vector_counter;
 
-	void reset_internal_matrix(); //on start
+	void reset_matrix_and_wsreg(SS_Inputs); //on start
 	void read_vector_from_UB(int, int, SS_Inputs); //on count
 
-	void reset_switch_vector(); //on start
+	void reset_switch_vector(SS_Inputs); //on start
 	void push_data_and_switch_vector_to_MMU(int, int, SS_Inputs); //on count
 	void advance_switch_vector(int, int, int, bool);
 	void push_data_vector_to_MMU(int, int, int);
@@ -53,6 +54,7 @@ public:
 
 	//other HW
 	Unified_Buffer *ub;
+	Weight_Size_Reg* wsreg;
 
 	Systolic_Setup(int _mmu_size)
 		:
@@ -82,15 +84,16 @@ public:
 		std::fill(switch_weights, switch_weights + mmu_size, false);
 
 		ub = NULL;
+		wsreg = NULL;
 
 		read_vector_counter.addHandlers(
-			bind(&Systolic_Setup::reset_internal_matrix, this),
+			bind(&Systolic_Setup::reset_matrix_and_wsreg, this, placeholders::_1),
 			bind(&Systolic_Setup::read_vector_from_UB, this, placeholders::_1, placeholders::_2, placeholders::_3),
 			NULL
 		);
 
 		push_vector_counter.addHandlers(
-			bind(&Systolic_Setup::reset_switch_vector, this),
+			bind(&Systolic_Setup::reset_switch_vector, this, placeholders::_1),
 			bind(&Systolic_Setup::push_data_and_switch_vector_to_MMU, this, placeholders::_1, placeholders::_2, placeholders::_3),
 			bind(&Systolic_Setup::reset_acc_outs, this)
 		);
