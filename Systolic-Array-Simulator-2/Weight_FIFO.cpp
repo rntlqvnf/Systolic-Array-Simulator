@@ -2,31 +2,30 @@
 
 void Weight_FIFO::push(int8_t** mat)
 {
-	weight_queue.push(mat);
+	Matrix_And_Size new_entity = { mat, matrix_size };
+	weight_queue.push(new_entity);
 }
 
 void Weight_FIFO::pop_and_set_size_ifn_start(WF_Inputs data)
 {
 	write_en = true;
 	
-	if (wsreg != NULL)
-	{
-		wsreg->set_size(data.matrix_size);
-	}
-
 	if (state == STATE::READ_END)
 	{
 		state = STATE::PUSH_END;
+		if (wsreg != NULL) wsreg->set_size(weight_queue.front().size);
 	}
 	else if (!weight_queue.empty())
 	{
-		int8_t** mat_to_remove = weight_queue.front();
+		int8_t** mat_to_remove = weight_queue.front().matrix;
 
 		weight_queue.pop();
 
 		for (int i = 0; i < mmu_size; ++i)
 			delete[] mat_to_remove[i];
 		delete[] mat_to_remove;
+
+		if (!weight_queue.empty() && wsreg != NULL) wsreg->set_size(weight_queue.front().size);
 	}
 }
 
@@ -51,7 +50,7 @@ void Weight_FIFO::transpose_and_push(int step, int max_step, WF_Inputs data)
 	if (!weight_queue.empty())
 	{
 		for (int i = 0; i < mmu_size; i++) //Transpose (Weight stationary MMU needs transposed weight matrix)
-			input_weights[i] = weight_queue.front()[i][max_step - step - 1];
+			input_weights[i] = weight_queue.front().matrix[i][max_step - step - 1];
 	}
 }
 
@@ -77,7 +76,8 @@ void Weight_FIFO::read_matrix_when_max_step(int step, int max_step, WF_Inputs da
 			}
 		}
 
-		weight_queue.push(mat);
+		Matrix_And_Size new_entity = { mat, matrix_size };
+		weight_queue.push(new_entity);
 	}
 }
 

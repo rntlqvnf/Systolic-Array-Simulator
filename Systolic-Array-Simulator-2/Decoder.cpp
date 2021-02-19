@@ -96,21 +96,27 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 	}
 	else if (opcode.find("ACT") != string::npos)
 	{
-		//ACT.{F} src dst N
-		assert(parsed_inst.size() == 4);
+		//ACT.{FP} src dst N {M}
+		assert(parsed_inst.size() == 4 || parsed_inst.size() == 5);
 
 		controls["act.act_en"] = true;
 
 		string option = opcode.length() > 4 ? opcode.substr(4) : "";
-		//S
+		//F
 		if (option.find("F") != string::npos)
 		{
 			controls["act.fold_en"] = true;
+		}
+		//P
+		if (option.find("P") != string::npos)
+		{
+			controls["act.pool_en"] = true;
 		}
 
 		values["act.acc_addr"] = atoi(parsed_inst[1].c_str());
 		values["act.ub_addr"] = atoi(parsed_inst[2].c_str());
 		values["act.matrix_size"] = atoi(parsed_inst[3].c_str());
+		if(parsed_inst.size() == 5) values["act.kernel_size"] = atoi(parsed_inst[4].c_str());
 	}
 	else if (opcode == "NOP")
 	{
@@ -143,6 +149,7 @@ void Decoder::reset() {
 	controls["wf.unfold_en"] = false;
 	controls["act.act_en"] = false;
 	controls["act.fold_en"] = false;
+	controls["act.pool_en"] = false;
 	controls["halt"] = false;
 
 	values["ub.addr"] = 0;

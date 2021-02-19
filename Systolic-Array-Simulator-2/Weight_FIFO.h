@@ -23,6 +23,12 @@ struct WF_Inputs
 	int dram_addr;
 };
 
+struct Matrix_And_Size
+{
+	int8_t** matrix;
+	int size;
+};
+
 class Weight_FIFO
 {
 private:
@@ -51,7 +57,7 @@ public:
 	bool write_en;
 
 	//internal
-	std::queue<int8_t**> weight_queue;
+	std::queue<Matrix_And_Size> weight_queue;
 
 	//other HW
 	Memory* dram;

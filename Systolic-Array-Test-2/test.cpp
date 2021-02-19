@@ -381,9 +381,6 @@ namespace UnitTest
 				EXPECT_FALSE(ss.acc_write_en) << "Expect False if under matrix_size " << i;
 			}
 		}
-
-		ss.push_vectors_to_MMU_when_enable();
-		EXPECT_FALSE(ss.acc_write_en);
 	}
 
 	TEST(WeightFIFOTest, PushPopTest) {
@@ -406,7 +403,7 @@ namespace UnitTest
 		{
 			for (int j = 0; j < mmu_size; j++)
 			{
-				EXPECT_EQ(copy[i][j], wf.weight_queue.front()[i][j]) << "FIFO front failed: " << i << "," << j;
+				EXPECT_EQ(copy[i][j], wf.weight_queue.front().matrix[i][j]) << "FIFO front failed: " << i << "," << j;
 			}
 		}
 
@@ -586,7 +583,7 @@ namespace UnitTest
 		{
 			for (int j = 0; j < matrix_size; j++)
 			{
-				EXPECT_EQ(dram.mem_block[i][j], wf.weight_queue.front()[0][i * matrix_size + j]);
+				EXPECT_EQ(dram.mem_block[i][j], wf.weight_queue.front().matrix[0][i * matrix_size + j]);
 			}
 		}
 	}
@@ -691,6 +688,71 @@ namespace UnitTest
 			for (int j = 0; j < matrix_size; j++)
 			{
 				EXPECT_EQ(answer[i][j], ub.mem_block[i][j]) << "Fold Failed " << i << ", " << j;
+			}
+		}
+	}
+
+	TEST(ActivationTest, PoolingTest)
+	{
+		int mmu_size = 4;
+		int matrix_size = 4;
+		Memory hm(mmu_size, 50);
+		Memory dram(mmu_size, 50);
+		Unified_Buffer ub(mmu_size, 4);
+		Systolic_Setup ss(mmu_size);
+		Weight_FIFO wf(mmu_size);
+		MMU mmu(mmu_size);
+		Accumulator acc(mmu_size, 50);
+		Activation act(mmu_size);
+
+		ub.hm = &hm;
+		wf.dram = &dram;
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+		acc.mmu = &mmu;
+		act.acc = &acc;
+
+		int32_t input[7][4] =
+		{
+			{ 1,0,0,0 },
+			{ 0,2,0,0 },
+			{ 2,3,1,0 },
+			{ 4,1,1,1 },
+			{ 0,1,1,1 },
+			{ 0,0,1,1 },
+			{ 0,0,0,5 }
+		};
+
+		for (int i = 0; i < 7; i++)
+		{
+			acc.write(input[i], i + 1);
+		}
+
+		act.act_en = true;
+		act.fold_en = false;
+		act.pool_en = true;
+		act.acc_addr = 1;
+		act.ub_addr = 0;
+		act.matrix_size = matrix_size;
+		act.kernel_size = 2;
+
+		act.do_activation_and_write_to_UB();
+		act.do_activation_and_write_to_UB();
+		act.do_activation_and_write_to_UB();
+		act.do_activation_and_write_to_UB();
+
+		int8_t answer[2][2] =
+		{
+			{1,2},
+			{1,2}
+		};
+
+		for (int i = 0; i < 2; i++)
+		{
+			for (int j = 0; j < 2; j++)
+			{
+				EXPECT_EQ(answer[i][j], ub.mem_block[i][j]) << "Pool Failed " << i << ", " << j;
 			}
 		}
 	}

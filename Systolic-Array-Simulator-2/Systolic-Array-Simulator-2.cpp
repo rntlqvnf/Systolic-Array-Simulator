@@ -1,6 +1,8 @@
 ﻿
 #include <iostream>
 #include <fstream> 
+#include <sstream>
+#include <vector>
 #include "MMU.h"
 #include "Unified_Buffer.h"
 #include "Accumulator.h"
@@ -9,10 +11,11 @@
 
 using namespace std;
 
-const int MAT_SIZE = 8;
+const int MAT_SIZE = 28;
 
 void open_file_and_verify(string name, ifstream& stream);
 void read_csv_and_save_to_mem(ifstream& file, Memory& mem);
+void parse_by_comma(vector<string>&, stringstream&);
 void print_mem_block(string name, int8_t** mem);
 void print_mem_block(string name, int32_t** mem_block);
 
@@ -26,14 +29,14 @@ int main()
     open_file_and_verify("Weight", weight_file);
     open_file_and_verify("Data", data_file);
 
-    Memory hm(MAT_SIZE, 50);
-    Memory dram(MAT_SIZE, 50);
+    Memory hm(MAT_SIZE, 5 * MAT_SIZE);
+    Memory dram(MAT_SIZE, 5 * MAT_SIZE);
     Weight_Size_Reg wsreg;
-    Unified_Buffer ub(MAT_SIZE, 10);
+    Unified_Buffer ub(MAT_SIZE, 12 * MAT_SIZE);
     Systolic_Setup ss(MAT_SIZE);
     Weight_FIFO wf(MAT_SIZE);
     MMU mmu(MAT_SIZE);
-    Accumulator acc(MAT_SIZE, 30);
+    Accumulator acc(MAT_SIZE, 2 * MAT_SIZE);
     Activation act(MAT_SIZE);
 
     ub.hm = &hm;
@@ -72,6 +75,7 @@ int main()
         wf.unfold_en = decoder.controls["wf.unfold_en"];
         act.act_en = decoder.controls["act.act_en"];
         act.fold_en = decoder.controls["act.fold_en"];
+        act.pool_en = decoder.controls["act.pool_en"];
 
         ub.addr = decoder.values["ub.addr"];
         ub.hm_addr = decoder.values["ub.hm_addr"];
@@ -111,7 +115,7 @@ int main()
         mmu.calculate();
 
         cycle++;
-        cout << "[[Cycle " << cycle << "]]" << endl;
+        //cout << "[[Cycle " << cycle << "]]" << endl;
         //print_mem_block("Host Memory", hm.mem_block);
     }
 }
@@ -164,16 +168,26 @@ void read_csv_and_save_to_mem(ifstream& file, Memory& mem)
     string buf;
     for (int i = 0; i < MAT_SIZE; i++)
     {
-        for (int j = 0; j < MAT_SIZE; j++)
+        if (file.peek() == EOF)
         {
-            if (file.peek() == EOF)
+            for (int j = 0; j < MAT_SIZE; j++)
             {
                 mem.mem_block[i][j] = 0;
             }
-            else
+        }
+        else
+        {
+            getline(file, buf);
+            stringstream ss(buf);
+            vector<string> result;
+            parse_by_comma(result, ss);
+            for (int j = 0; j < result.size(); j++)
             {
-                getline(file, buf, ',');
-                mem.mem_block[i][j] = atoi(buf.c_str());
+                mem.mem_block[i][j] = atoi(result[j].c_str());
+            }
+            for (int j = result.size(); j < MAT_SIZE; j++)
+            {
+                mem.mem_block[i][j] = 0;
             }
         }
     }
@@ -189,4 +203,15 @@ void read_csv_and_save_to_mem(ifstream& file, Memory& mem)
     cout << endl;
 
     file.close();
+}
+
+
+void parse_by_comma(vector<string>& vec, stringstream& ss)
+{
+    while (ss.good())
+    {
+        string substr;
+        getline(ss, substr, ',');
+        vec.push_back(substr);
+    }
 }

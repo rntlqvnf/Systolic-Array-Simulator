@@ -70,18 +70,21 @@ void Systolic_Setup::push_vectors_to_MMU_when_enable()
 		int result_size = matrix_size - wsreg->get_size() + 1;
 		int result_cols = result_size * result_size;
 
-		int unfold_max_step = DIAG_WIDTH_2(matrix_size, result_cols);
+		int unfold_max_step = DIAG_WIDTH_2(mmu_size, result_cols);
 		int non_unfold_max_step = DIAG_WIDTH_1(mmu_size);
 
 		int bigger_max_step = unfold_max_step > non_unfold_max_step ? unfold_max_step : non_unfold_max_step;
 
 		SS_Inputs input = { new_matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en };
-		push_vector_counter.count(bigger_max_step + 1, input);
+		push_vector_counter.count(bigger_max_step + mmu_size + 1, input);
 	}
 	else
 	{
 		SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en };
-		push_vector_counter.count(DIAG_WIDTH_1(mmu_size) + 1, input);
+		push_vector_counter.count(DIAG_WIDTH_1(mmu_size) + mmu_size + 1, input); 
+		//Why DIAG_WIDTH_1(mmu_size) + mmu_size + 1?
+		//Cycle for last column to go last mmu column is  DIAG_WIDTH_1(mmu_size) + mmu_size
+		//1 cycle for acc write
 	}
 }
 
