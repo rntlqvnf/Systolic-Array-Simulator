@@ -1,5 +1,5 @@
 RHM 0, 0, 8
-RW 0
+RW.U 0 2
 NOP
 NOP
 NOP
@@ -100,7 +100,7 @@ NOP
 NOP
 NOP
 NOP
-MMC.S 0, 0, 8
+MMC.SU 0, 0, 4
 NOP
 NOP
 NOP

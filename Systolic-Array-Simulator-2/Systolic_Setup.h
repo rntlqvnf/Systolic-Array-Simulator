@@ -4,7 +4,8 @@
 #include "Unified_Buffer.h"
 #include "Weight_Size_Reg.h"
 
-#define DIAG_WIDTH(x) ((2 * x) - 1)
+#define DIAG_WIDTH_1(x) ((2 * x) - 1)
+#define DIAG_WIDTH_2(x, y) ((x + y) - 1)
 
 struct SS_Inputs
 {
@@ -31,7 +32,7 @@ private:
 	void push_data_and_switch_vector_to_MMU(int, int, SS_Inputs); //on count
 	void advance_switch_vector(int, int, int, bool);
 	void push_data_vector_to_MMU(int, int, int);
-	void reset_acc_outs(); //on end
+	void reset_ouputs(); //on end
 
 public:
 	//input
@@ -81,7 +82,7 @@ public:
 
 		diagonalized_matrix = new int8_t * [mmu_size];
 		for (int i = 0; i < mmu_size; i++)
-			diagonalized_matrix[i] = new int8_t[DIAG_WIDTH(mmu_size)];
+			diagonalized_matrix[i] = new int8_t[mmu_size * mmu_size]; //Max when convolution
 
 		switch_weights = new bool[mmu_size];
 		std::fill(switch_weights, switch_weights + mmu_size, false);
@@ -98,7 +99,7 @@ public:
 		push_vector_counter.addHandlers(
 			bind(&Systolic_Setup::reset_switch_vector, this, placeholders::_1),
 			bind(&Systolic_Setup::push_data_and_switch_vector_to_MMU, this, placeholders::_1, placeholders::_2, placeholders::_3),
-			bind(&Systolic_Setup::reset_acc_outs, this)
+			bind(&Systolic_Setup::reset_ouputs, this)
 		);
 	}
 

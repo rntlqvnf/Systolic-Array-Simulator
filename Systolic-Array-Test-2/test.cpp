@@ -175,10 +175,10 @@ namespace UnitTest
 		ss.read_en = false;
 		ss.push_en = true;
 		ss.switch_en = true;
-		for (int i = 0; i < DIAG_WIDTH(mmu_size); i++)
+		for (int i = 0; i < DIAG_WIDTH_1(mmu_size); i++)
 		{
 			ss.push_vectors_to_MMU_when_enable();
-			if (i < DIAG_WIDTH(matrix_size))
+			if (i < DIAG_WIDTH_1(matrix_size))
 			{
 				EXPECT_EQ(answer[0][i], ss.input_datas[0]) << "Advancing 1 failed in " << i;
 				EXPECT_EQ(answer[1][i], ss.input_datas[1]) << "Advancing 2 failed in " << i;
@@ -237,18 +237,18 @@ namespace UnitTest
 
 		ss.read_en = false;
 		ss.push_en = true;
-		for (int i = 0; i < DIAG_WIDTH(mmu_size); i++)
+		for (int i = 0; i < DIAG_WIDTH_1(mmu_size); i++)
 		{
 			ss.push_vectors_to_MMU_when_enable();
 		}
 
-		EXPECT_EQ(0, ss.diagonalized_matrix[0][DIAG_WIDTH(mmu_size) - 1]);
-		EXPECT_EQ(3, ss.diagonalized_matrix[1][DIAG_WIDTH(mmu_size) - 1]);
+		EXPECT_EQ(0, ss.diagonalized_matrix[0][DIAG_WIDTH_1(mmu_size) - 1]);
+		EXPECT_EQ(3, ss.diagonalized_matrix[1][DIAG_WIDTH_1(mmu_size) - 1]);
 
 		ss.push_vectors_to_MMU_when_enable();
 
-		EXPECT_EQ(0, ss.diagonalized_matrix[0][DIAG_WIDTH(mmu_size) - 1]);
-		EXPECT_EQ(3, ss.diagonalized_matrix[1][DIAG_WIDTH(mmu_size) - 1]);
+		EXPECT_EQ(0, ss.diagonalized_matrix[0][DIAG_WIDTH_1(mmu_size) - 1]);
+		EXPECT_EQ(3, ss.diagonalized_matrix[1][DIAG_WIDTH_1(mmu_size) - 1]);
 	}
 
 	TEST(SystolicSetupTest, PushWithMatrixSizeIn) {
@@ -274,10 +274,10 @@ namespace UnitTest
 		ss.acc_addr_in = 1;
 		ss.read_en = false;
 		ss.push_en = true;
-		for (int i = 0; i < DIAG_WIDTH(mmu_size); i++)
+		for (int i = 0; i < DIAG_WIDTH_1(mmu_size); i++)
 		{
 			ss.push_vectors_to_MMU_when_enable();
-			if (i >= DIAG_WIDTH(matrix_size))
+			if (i >= DIAG_WIDTH_1(matrix_size))
 			{
 				EXPECT_EQ(0, ss.input_datas[0]);
 				EXPECT_EQ(0, ss.input_datas[1]);
@@ -314,20 +314,25 @@ namespace UnitTest
 		ss.read_vector_from_UB_when_enable();
 		ss.read_vector_from_UB_when_enable();
 		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
 
 		ss.acc_addr_in = 1;
 		ss.read_en = false;
 		ss.push_en = true;
-		ss.unfold_en = false;
+		ss.unfold_en = true;
 
-		int8_t answer[4][7] =
+		int8_t answer[4][12] =
 		{
-			{1, 3, 3, 5, 0, 0, 0},
-			{0, 2, 4, 4, 6, 0, 0},
-			{0, 0, 2, 4, 4, 6, 0},
-			{0, 0, 0, 3, 5, 5, 7}
+			{1, 2, 3, 2, 3, 4, 3, 4, 5, 0, 0, 0},
+			{0, 2, 3, 4, 3, 4, 5, 4, 5, 6, 0, 0},
+			{0, 0, 2, 3, 4, 3, 4, 5, 4, 5, 6, 0},
+			{0, 0, 0, 3, 4, 5, 4, 5, 6, 5, 6, 7}
 		};
-		for (int i = 0; i < DIAG_WIDTH(4); i++)
+		for (int i = 0; i < 12; i++)
 		{
 			ss.push_vectors_to_MMU_when_enable();
 			EXPECT_EQ(answer[0][i], ss.input_datas[0]) << "FAILED IN " << i;
@@ -361,7 +366,7 @@ namespace UnitTest
 		ss.read_en = false;
 		ss.push_en = true;
 
-		for (int i = 0; i < DIAG_WIDTH(mmu_size); i++)
+		for (int i = 0; i < DIAG_WIDTH_1(mmu_size); i++)
 		{
 			ss.push_vectors_to_MMU_when_enable();
 
@@ -1130,7 +1135,14 @@ namespace UnitTest
 			}
 		}
 
-		for (int i = 0; i < 13; i++)
+		int32_t answer[3][3] =
+		{
+			{7,10,11},
+			{11,14,15},
+			{18,21,22}
+		};
+
+		for (int i = 0; i < 18; i++)
 		{
 			// 0 1 ub read & ss program
 			// 1 wf read
@@ -1239,7 +1251,6 @@ namespace UnitTest
 			//Combination Logic
 			mmu.calculate();
 
-			cout << "IN STEP "<< i << "  " << mmu.last_row_sum[0] << endl;
 			switch (i)
 			{
 			case 9:
@@ -1249,15 +1260,40 @@ namespace UnitTest
 			}
 			case 10:
 			{
-				EXPECT_EQ(11, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				EXPECT_EQ(10, mmu.last_row_sum[0]) << "Cal failed in step " << i;
 				break;
 			}
 			case 11:
 			{
-				EXPECT_EQ(18, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				EXPECT_EQ(11, mmu.last_row_sum[0]) << "Cal failed in step " << i;
 				break;
 			}			
 			case 12:
+			{
+				EXPECT_EQ(11, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}
+			case 13:
+			{
+				EXPECT_EQ(14, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}
+			case 14:
+			{
+				EXPECT_EQ(15, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}
+			case 15:
+			{
+				EXPECT_EQ(18, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}
+			case 16:
+			{
+				EXPECT_EQ(21, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}			
+			case 17:
 			{
 				EXPECT_EQ(22, mmu.last_row_sum[0]) << "Cal failed in step " << i;
 				break;
@@ -1495,6 +1531,7 @@ namespace UnitTest
 
 		Memory hm(mmu_size, 50);
 		Memory dram(mmu_size, 50);
+		Weight_Size_Reg wsreg;
 		Unified_Buffer ub(mmu_size, 4);
 		Systolic_Setup ss(mmu_size);
 		Weight_FIFO wf(mmu_size);
@@ -1504,7 +1541,9 @@ namespace UnitTest
 
 		ub.hm = &hm;
 		wf.dram = &dram;
+		wf.wsreg = &wsreg;
 		ss.ub = &ub;
+		ss.wsreg = &wsreg;
 		mmu.ss = &ss;
 		mmu.wf = &wf;
 		acc.mmu = &mmu;
@@ -1579,8 +1618,10 @@ namespace UnitTest
 				wf.read_en = false;
 				wf.unfold_en = false;
 				wf.dram_addr = 0;
+				wf.matrix_size = matrix_size;
 
 				act.act_en = false;
+				act.fold_en = false;
 				act.matrix_size = 0;
 				act.acc_addr = 0;
 				act.ub_addr = 0;
@@ -1606,8 +1647,10 @@ namespace UnitTest
 				wf.read_en = true;
 				wf.unfold_en = false;
 				wf.dram_addr = 0;
+				wf.matrix_size = 2;
 
 				act.act_en = false;
+				act.fold_en = false;
 				act.matrix_size = 0;
 				act.acc_addr = 0;
 				act.ub_addr = 0;
@@ -1634,8 +1677,10 @@ namespace UnitTest
 				wf.read_en = false;
 				wf.unfold_en = false;
 				wf.dram_addr = 0;
+				wf.matrix_size = 0;
 
 				act.act_en = false;
+				act.fold_en = false;
 				act.matrix_size = 0;
 				act.acc_addr = 0;
 				act.ub_addr = 0;
@@ -1660,8 +1705,10 @@ namespace UnitTest
 				wf.read_en = false;
 				wf.unfold_en = false;
 				wf.dram_addr = 0;
+				wf.matrix_size = 0;
 
 				act.act_en = true;
+				act.fold_en = false;
 				act.matrix_size = matrix_size;
 				act.acc_addr = 0;
 				act.ub_addr = 2;
@@ -1686,8 +1733,10 @@ namespace UnitTest
 				wf.read_en = false;
 				wf.unfold_en = false;
 				wf.dram_addr = 0;
+				wf.matrix_size = 0;
 
 				act.act_en = false;
+				act.fold_en = false;
 				act.matrix_size = 0;
 				act.acc_addr = 0;
 				act.ub_addr = 0;
@@ -1712,8 +1761,10 @@ namespace UnitTest
 				wf.read_en = false;
 				wf.unfold_en = false;
 				wf.dram_addr = 0;
+				wf.matrix_size = 0;
 
 				act.act_en = false;
+				act.fold_en = false;
 				act.matrix_size = 0;
 				act.acc_addr = 0;
 				act.ub_addr = 0;

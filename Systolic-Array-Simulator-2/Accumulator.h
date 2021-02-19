@@ -34,7 +34,7 @@ public:
 		assert(mmu != NULL);
 
 		bool write_en = mmu->ss->acc_write_en;
-		bool overwrite_en = mmu->ss->overwrite_en;
+		bool overwrite_en = mmu->ss->acc_overwrite_en;
 		int addr = mmu->ss->acc_addr_out;
 
 		if (write_en)

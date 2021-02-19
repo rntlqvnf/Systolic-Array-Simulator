@@ -14,6 +14,7 @@ const int MAT_SIZE = 8;
 void open_file_and_verify(string name, ifstream& stream);
 void read_csv_and_save_to_mem(ifstream& file, Memory& mem);
 void print_mem_block(string name, int8_t** mem);
+void print_mem_block(string name, int32_t** mem_block);
 
 int main()
 {
@@ -84,7 +85,12 @@ int main()
         act.acc_addr = decoder.values["act.acc_addr"];
         act.ub_addr = decoder.values["act.ub_addr"];
 
-        if (decoder.controls["halt"]) exit(0);
+        if (decoder.controls["halt"]) {
+            cout << endl << "[[Result]]" << endl;
+            print_mem_block("Host Memory", hm.mem_block);
+
+            exit(0);
+        }
 
         //Register update
         ub.read_vector_from_HM_when_enable();
@@ -106,8 +112,22 @@ int main()
 
         cycle++;
         cout << "[[Cycle " << cycle << "]]" << endl;
-        print_mem_block("Host Memory", hm.mem_block);
+        //print_mem_block("Host Memory", hm.mem_block);
     }
+}
+
+void print_mem_block(string name, int32_t** mem_block)
+{
+    cout << "[" << name << "]" << endl;
+    for (int i = 0; i < MAT_SIZE; i++)
+    {
+        for (int j = 0; j < MAT_SIZE; j++)
+        {
+            cout << mem_block[i][j] << ", ";
+        }
+        cout << endl;
+    }
+    cout << endl;
 }
 
 void print_mem_block(string name, int8_t** mem_block)
