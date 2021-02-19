@@ -27,6 +27,7 @@ int main()
 
     Memory hm(MAT_SIZE, 50);
     Memory dram(MAT_SIZE, 50);
+    Weight_Size_Reg wsreg;
     Unified_Buffer ub(MAT_SIZE, 10);
     Systolic_Setup ss(MAT_SIZE);
     Weight_FIFO wf(MAT_SIZE);
@@ -36,7 +37,9 @@ int main()
 
     ub.hm = &hm;
     wf.dram = &dram;
+    wf.wsreg = &wsreg;
     ss.ub = &ub;
+    ss.wsreg = &wsreg;
     mmu.ss = &ss;
     mmu.wf = &wf;
     acc.mmu = &mmu;
@@ -62,10 +65,12 @@ int main()
         ss.push_en = decoder.controls["ss.push_en"];
         ss.switch_en = decoder.controls["ss.switch_en"];
         ss.overwrite_en = decoder.controls["ss.overwrite_en"];
+        ss.unfold_en = decoder.controls["ss.unfold_en"];
         wf.push_en = decoder.controls["wf.push_en"];
         wf.read_en = decoder.controls["wf.read_en"];
         wf.unfold_en = decoder.controls["wf.unfold_en"];
         act.act_en = decoder.controls["act.act_en"];
+        act.fold_en = decoder.controls["act.fold_en"];
 
         ub.addr = decoder.values["ub.addr"];
         ub.hm_addr = decoder.values["ub.hm_addr"];
@@ -74,6 +79,7 @@ int main()
         ss.acc_addr_in = decoder.values["ss.acc_addr_in"];
         ss.matrix_size = decoder.values["ss.matrix_size"];
         wf.dram_addr = decoder.values["wf.dram_addr"];
+        wf.matrix_size = decoder.values["wf.matrix_size"];
         act.matrix_size = decoder.values["act.matrix_size"];
         act.acc_addr = decoder.values["act.acc_addr"];
         act.ub_addr = decoder.values["act.ub_addr"];

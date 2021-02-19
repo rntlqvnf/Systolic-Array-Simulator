@@ -2,7 +2,7 @@
 
 void Systolic_Setup::read_vector_from_UB_when_enable()
 {
-	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en };
+	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en };
 	read_vector_counter.count(matrix_size, input);
 }
 
@@ -10,12 +10,33 @@ void Systolic_Setup::read_vector_from_UB(int step, int max_step, SS_Inputs data)
 {
 	assert(ub != NULL);
 
-	for (int i = 0; i < data.matrix_size; i++)
+	if (data.unfold_en)
 	{
-		// 1 2 3 4 > >
-		// > 1 2 3 4 >
-		// > > 1 2 3 4
-		diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+		cout << "WEIGHT SIZE " << wsreg->get_size() << endl;;
+		int weight_size = wsreg->get_size();
+		int data_size = data.matrix_size;
+		int result_size = data_size - weight_size + 1;
+		int row = step / (data_size / weight_size);
+		int col = step % (data_size / weight_size);
+		
+		for (int i = 0; i < weight_size; i++)
+		{
+			for (int j = 0; j < weight_size; j++)
+			{
+				diagonalized_matrix[i * weight_size + j][i * weight_size + j + step] 
+					= ub->mem_block[data.ub_addr + weight_size * row + i][weight_size * col + j];
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < data.matrix_size; i++)
+		{
+			// 1 2 3 4 > >
+			// > 1 2 3 4 >
+			// > > 1 2 3 4
+			diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+		}
 	}
 }
 
@@ -34,7 +55,11 @@ void Systolic_Setup::reset_matrix_and_wsreg(SS_Inputs datas)
 
 void Systolic_Setup::push_vectors_to_MMU_when_enable()
 {
-	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en };
+	int new_matrix_size =
+		unfold_en && wsreg != NULL ?
+		wsreg->get_size() * wsreg->get_size() :
+		this->matrix_size;
+	SS_Inputs input = { new_matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en };
 	push_vector_counter.count(DIAG_WIDTH(mmu_size) + 1, input);
 }
 
@@ -71,12 +96,12 @@ void Systolic_Setup::advance_switch_vector(int step, int max_step, int matrix_si
 	}
 	else
 	{
-		std::fill(switch_weights, switch_weights + matrix_size, false);
+		std::fill(switch_weights, switch_weights + mmu_size, false);
 	}
 }
 
 void Systolic_Setup::push_data_vector_to_MMU(int step, int max_step, int matrix_size)
 {
-	for (int i = 0; i < matrix_size; i++)
-		input_datas[i] = (step >= DIAG_WIDTH(matrix_size)) ? 0 : diagonalized_matrix[i][step];
+	for (int i = 0; i < mmu_size; i++)
+		input_datas[i] = i >= matrix_size || (step >= DIAG_WIDTH(matrix_size)) ? 0 : diagonalized_matrix[i][step];
 }

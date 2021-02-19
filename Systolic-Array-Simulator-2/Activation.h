@@ -7,6 +7,7 @@ struct Act_Inputs
 	int matrix_size;
 	int acc_addr;
 	int ub_addr;
+	bool fold_en;
 };
 
 class Activation
@@ -21,6 +22,7 @@ public:
 	int acc_addr;
 	int ub_addr;
 	bool act_en;
+	bool fold_en;
 
 	//internal
 	int32_t* vec;
@@ -38,6 +40,7 @@ public:
 		acc_addr = 0;
 		ub_addr = 0;
 		act_en = false;
+		fold_en = false;
 
 		vec = new int32_t[mmu_size];
 
@@ -52,32 +55,50 @@ public:
 
 	void do_activation_and_write_to_UB()
 	{
-		Act_Inputs inputs = { matrix_size, acc_addr, ub_addr };
+		Act_Inputs inputs = { matrix_size, acc_addr, ub_addr, fold_en };
 		act_vector_counter.count(matrix_size, inputs);
 	}
 
 private:
 	void read_activate_write(int step, int max_step, Act_Inputs data)
 	{
-		read_vector_from_UB(step, max_step, data.matrix_size, data.acc_addr);
+		read_vector_from_ACC(step, max_step, data.matrix_size, data.acc_addr, data.fold_en);
 		activate(data.matrix_size);
 		write_to_UB(step, max_step, data.matrix_size, data.ub_addr);
 	}
-	void read_vector_from_UB(int step, int max_step, int matrix_size, int acc_addr)
+	void read_vector_from_ACC(int step, int max_step, int matrix_size, int acc_addr, bool fold_en)
 	{
 		assert(acc != NULL);
 
-		// (addr / width)
-		//   0  1  2 ...
-		// 0 11 -  -
-		// 1 12 21 -
-		// 2 13 22 31
-		// 3 -  23 32
-		// 4 -  -  33
-
-		for (int i = 0; i < matrix_size; i++)
+		if (fold_en)
 		{
-			vec[i] = acc->mem_block[acc_addr + step + i][i];
+			// (addr / width)
+			//   0  1  2 ...
+			// 0 11 -  -
+			// 1 12 -  -
+			// 2 21 -  -
+			// 3 22  -  -
+			// 4 -  -  -
+
+			for (int i = 0; i < matrix_size; i++)
+			{
+				vec[i] = acc->mem_block[acc_addr + step + i * matrix_size][0];
+			}
+		}
+		else
+		{
+			// (addr / width)
+			//   0  1  2 ...
+			// 0 11 -  -
+			// 1 12 21 -
+			// 2 13 22 31
+			// 3 -  23 32
+			// 4 -  -  33
+
+			for (int i = 0; i < matrix_size; i++)
+			{
+				vec[i] = acc->mem_block[acc_addr + step + i][i];
+			}
 		}
 	}
 	void activate(int matrix_size)

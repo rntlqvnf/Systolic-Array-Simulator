@@ -13,6 +13,7 @@ struct SS_Inputs
 	int acc_addr;
 	bool switch_en;
 	bool overwrite_en;
+	bool unfold_en;
 };
 
 class Systolic_Setup
@@ -38,6 +39,7 @@ public:
 	bool read_en;
 	bool switch_en;
 	bool overwrite_en;
+	bool unfold_en;
 	int ub_addr;
 	int acc_addr_in;
 	int matrix_size;
@@ -67,6 +69,7 @@ public:
 		read_en = false;
 		switch_en = false;
 		overwrite_en = false;
+		unfold_en = false;
 		ub_addr = 0;
 		acc_addr_in = 0;
 		matrix_size = mmu_size;

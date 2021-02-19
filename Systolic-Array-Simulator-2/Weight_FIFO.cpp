@@ -8,6 +8,12 @@ void Weight_FIFO::push(int8_t** mat)
 void Weight_FIFO::pop_and_set_size_ifn_start(WF_Inputs data)
 {
 	write_en = true;
+	
+	if (wsreg != NULL)
+	{
+		wsreg->set_size(data.matrix_size);
+	}
+
 	if (state == STATE::READ_END)
 	{
 		state = STATE::PUSH_END;
@@ -21,9 +27,6 @@ void Weight_FIFO::pop_and_set_size_ifn_start(WF_Inputs data)
 		for (int i = 0; i < mmu_size; ++i)
 			delete[] mat_to_remove[i];
 		delete[] mat_to_remove;
-
-		if(wsreg != NULL)
-			wsreg->set_size(matrix_size);
 	}
 }
 
@@ -36,7 +39,7 @@ void Weight_FIFO::read_matrix_from_DRAM_when_en()
 
 void Weight_FIFO::push_weight_vector_to_MMU_when_en()
 {
-	WF_Inputs inputs = { mmu_size, 0 };
+	WF_Inputs inputs = { matrix_size, 0 };
 	if(state == STATE::READ_END)
 		push_matrix_counter.count(true, mmu_size, inputs);
 	else

@@ -87,19 +87,26 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 		//C
 		if (option.find("U") != string::npos)
 		{
-
+			controls["ss.unfold_en"] = true;
 		}
 
 		values["ss.ub_addr"] = atoi(parsed_inst[1].c_str());
 		values["ss.acc_addr_in"] = atoi(parsed_inst[2].c_str());
 		values["ss.matrix_size"] = atoi(parsed_inst[3].c_str());
 	}
-	else if (opcode == "ACT")
+	else if (opcode.find("ACT") != string::npos)
 	{
-		//ACT src dst N
+		//ACT.{F} src dst N
 		assert(parsed_inst.size() == 4);
 
 		controls["act.act_en"] = true;
+
+		string option = opcode.length() > 4 ? opcode.substr(4) : "";
+		//S
+		if (option.find("F") != string::npos)
+		{
+			controls["act.fold_en"] = true;
+		}
 
 		values["act.acc_addr"] = atoi(parsed_inst[1].c_str());
 		values["act.ub_addr"] = atoi(parsed_inst[2].c_str());
@@ -130,10 +137,12 @@ void Decoder::reset() {
 	controls["ss.push_en"] = false;
 	controls["ss.switch_en"] = false;
 	controls["ss.overwrite_en"] = false;
+	controls["ss.unfold_en"] = false;
 	controls["wf.push_en"] = false;
 	controls["wf.read_en"] = false;
 	controls["wf.unfold_en"] = false;
 	controls["act.act_en"] = false;
+	controls["act.fold_en"] = false;
 	controls["halt"] = false;
 
 	values["ub.addr"] = 0;

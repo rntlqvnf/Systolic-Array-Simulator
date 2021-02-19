@@ -5,13 +5,11 @@ class Weight_Size_Reg
 private:
 	int current_index;
 public:
-	int current_size;
 	int size[2];
 
 	Weight_Size_Reg()
 	{
 		current_index = 0;
-		current_size = 0;
 		size[0] = 0;
 		size[1] = 0;
 	}
@@ -19,6 +17,11 @@ public:
 	int get_size()
 	{
 		return size[current_index];
+	}
+
+	int get_buffer_size()
+	{
+		return size[1 - current_index];
 	}
 
 	void set_size(int new_size)

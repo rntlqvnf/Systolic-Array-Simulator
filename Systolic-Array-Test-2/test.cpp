@@ -285,6 +285,58 @@ namespace UnitTest
 		}
 	}
 
+	TEST(SystolicSetupTest, UnfoldTest) {
+		int mmu_size = 4;
+		int matrix_size = 4;
+		Weight_Size_Reg wsreg;
+		Systolic_Setup ss(mmu_size);
+		Unified_Buffer ub(mmu_size, 10);
+
+		ss.ub = &ub;
+		ss.wsreg = &wsreg;
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			ub.mem_block[i][0] = i + 1;
+			ub.mem_block[i][1] = i + 2;
+			ub.mem_block[i][2] = i + 3;
+			ub.mem_block[i][3] = i + 4;
+		}
+
+		wsreg.set_size(2);
+
+		ss.ub_addr = 0;
+		ss.read_en = true;
+		ss.unfold_en = true;
+		ss.switch_en = true;
+		ss.matrix_size = matrix_size;
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+		ss.read_vector_from_UB_when_enable();
+
+		ss.acc_addr_in = 1;
+		ss.read_en = false;
+		ss.push_en = true;
+		ss.unfold_en = false;
+
+		int8_t answer[4][7] =
+		{
+			{1, 3, 3, 5, 0, 0, 0},
+			{0, 2, 4, 4, 6, 0, 0},
+			{0, 0, 2, 4, 4, 6, 0},
+			{0, 0, 0, 3, 5, 5, 7}
+		};
+		for (int i = 0; i < DIAG_WIDTH(4); i++)
+		{
+			ss.push_vectors_to_MMU_when_enable();
+			EXPECT_EQ(answer[0][i], ss.input_datas[0]) << "FAILED IN " << i;
+			EXPECT_EQ(answer[1][i], ss.input_datas[1]) << "FAILED IN " << i;
+			EXPECT_EQ(answer[2][i], ss.input_datas[2]) << "FAILED IN " << i;
+			EXPECT_EQ(answer[3][i], ss.input_datas[3]) << "FAILED IN " << i;
+		}
+	}
+
 	TEST(SystolicSetupTest, AccOutTest) {
 		int mmu_size = 4;
 		int matrix_size = 2;
@@ -580,6 +632,60 @@ namespace UnitTest
 			for (int j = 0; j < matrix_size; j++)
 			{
 				EXPECT_EQ(ub.mem_block[1 + i][j], hm.mem_block[i][j]) << "No read when false " << i << ", " << j;
+			}
+		}
+	}
+
+	TEST(ActivationTest, FoldTest)
+	{
+		int mmu_size = 4;
+		int matrix_size = 2;
+		Memory hm(mmu_size, 50);
+		Memory dram(mmu_size, 50);
+		Unified_Buffer ub(mmu_size, 4);
+		Systolic_Setup ss(mmu_size);
+		Weight_FIFO wf(mmu_size);
+		MMU mmu(mmu_size);
+		Accumulator acc(mmu_size, 50);
+		Activation act(mmu_size);
+
+		ub.hm = &hm;
+		wf.dram = &dram;
+		ss.ub = &ub;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+		acc.mmu = &mmu;
+		act.acc = &acc;
+
+		int32_t input[4] = { 1,0,0,0 };
+		acc.write(input, 1);
+		input[0] = 2;
+		acc.write(input, 2);
+		input[0] = 3;
+		acc.write(input, 3);
+		input[0] = 4;
+		acc.write(input, 4);
+
+		act.act_en = true;
+		act.fold_en = true;
+		act.acc_addr = 1;
+		act.ub_addr = 0;
+		act.matrix_size = matrix_size;
+
+		act.do_activation_and_write_to_UB();
+		act.do_activation_and_write_to_UB();
+
+		int8_t answer[2][2] =
+		{
+			{1,2},
+			{3,4}
+		};
+
+		for (int i = 0; i < matrix_size; i++)
+		{
+			for (int j = 0; j < matrix_size; j++)
+			{
+				EXPECT_EQ(answer[i][j], ub.mem_block[i][j]) << "Fold Failed " << i << ", " << j;
 			}
 		}
 	}
@@ -972,6 +1078,194 @@ namespace UnitTest
 		}
 	}
 
+	TEST(MMUTest, ConvolutionTest) {
+		int mmu_size = 4;
+		int matrix_size = 4;
+
+		Memory hm(mmu_size, 50);
+		Memory dram(mmu_size, 50);
+		Weight_Size_Reg wsreg;
+		Unified_Buffer ub(mmu_size, 10);
+		Systolic_Setup ss(mmu_size);
+		Weight_FIFO wf(mmu_size);
+		MMU mmu(mmu_size);
+
+		ub.hm = &hm;
+		wf.dram = &dram;
+		wf.wsreg = &wsreg;
+		ss.ub = &ub;
+		ss.wsreg = &wsreg;
+		mmu.ss = &ss;
+		mmu.wf = &wf;
+
+		int8_t input[4][4] =
+		{
+			{1, 1, 2, 2},
+			{2, 2, 3, 3},
+			{3, 3, 4, 4},
+			{5, 5, 6, 6}
+		};
+
+		for (int i = 0; i < mmu_size; i++)
+		{
+			for (int j = 0; j < mmu_size; j++)
+			{
+				hm.mem_block[i][j] = input[i][j];
+			}
+		}
+
+		int8_t weight[4][4] =
+		{
+			{0,1, 0, 0},
+			{1,2, 0, 0},
+			{0,0, 0, 0},
+			{0,0, 0, 0}
+		};
+
+		for (int i = 0; i < mmu_size; i++)
+		{
+			for (int j = 0; j < mmu_size; j++)
+			{
+				dram.mem_block[i][j] = weight[i][j];
+			}
+		}
+
+		for (int i = 0; i < 13; i++)
+		{
+			// 0 1 ub read & ss program
+			// 1 wf read
+			// 2, 3, 4, 5 wf push (Auto push)
+			// 6, 7, 8, 9, 10, 11 mmu cal
+
+			//Control setting
+			switch (i)
+			{
+			case 0: //UB Read
+				ub.read_en = true;
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size = matrix_size;
+
+				ss.read_en = false;
+				ss.push_en = false;
+				ss.switch_en = false;
+				ss.overwrite_en = false;
+				ss.unfold_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size = matrix_size;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.unfold_en = false;
+				wf.dram_addr = 0;
+
+				break;
+
+			case 1: //WF Read
+				ub.read_en = false;
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size = 0;
+
+				ss.read_en = false;
+				ss.push_en = false;
+				ss.switch_en = false;
+				ss.overwrite_en = false;
+				ss.unfold_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size = 0;
+
+				wf.push_en = false;
+				wf.read_en = true;
+				wf.unfold_en = true;
+				wf.dram_addr = 0;
+				wf.matrix_size = 2;
+
+				break;
+
+			case 6: //MMU cal
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size = 0;
+
+				ss.read_en = true;
+				ss.push_en = true;
+				ss.switch_en = true;
+				ss.overwrite_en = true;
+				ss.unfold_en = true;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size = matrix_size;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.unfold_en = false;
+				wf.dram_addr = 0;
+
+				break;
+
+			default: //NOP
+				ub.addr = 0;
+				ub.hm_addr = 0;
+				ub.matrix_size = 0;
+
+				ss.read_en = false;
+				ss.push_en = false;
+				ss.switch_en = false;
+				ss.overwrite_en = false;
+				ss.unfold_en = false;
+				ss.ub_addr = 0;
+				ss.acc_addr_in = 0;
+				ss.matrix_size = 0;
+
+				wf.push_en = false;
+				wf.read_en = false;
+				wf.unfold_en = false;
+				wf.dram_addr = 0;
+
+				break;
+			}
+
+			//Register update
+			ub.read_vector_from_HM_when_enable();
+			ss.read_vector_from_UB_when_enable();
+			ss.push_vectors_to_MMU_when_enable();
+			wf.push_weight_vector_to_MMU_when_en();
+			wf.read_matrix_from_DRAM_when_en();
+			mmu.setup_array();
+
+			//Combination Logic
+			mmu.calculate();
+
+			cout << "IN STEP "<< i << "  " << mmu.last_row_sum[0] << endl;
+			switch (i)
+			{
+			case 9:
+			{
+				EXPECT_EQ(7, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}
+			case 10:
+			{
+				EXPECT_EQ(11, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}
+			case 11:
+			{
+				EXPECT_EQ(18, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}			
+			case 12:
+			{
+				EXPECT_EQ(22, mmu.last_row_sum[0]) << "Cal failed in step " << i;
+				break;
+			}
+			}
+		}
+	}
+
 	TEST(AccumTest, ReadAndWriteTest) {
 		int mmu_size = 4;
 		Accumulator accm(mmu_size, 12);
@@ -1276,6 +1570,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
+				ss.unfold_en = false;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size = 0;
@@ -1302,6 +1597,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
+				ss.unfold_en = false;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size = 0;
@@ -1329,6 +1625,7 @@ namespace UnitTest
 				ss.push_en = true;
 				ss.switch_en = true;
 				ss.overwrite_en = true;
+				ss.unfold_en = false;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size = matrix_size;
@@ -1354,6 +1651,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
+				ss.unfold_en = false;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size = 0;
@@ -1379,6 +1677,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
+				ss.unfold_en = false;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size = 0;
@@ -1404,6 +1703,7 @@ namespace UnitTest
 				ss.read_en = false;
 				ss.push_en = false;
 				ss.switch_en = false;
+				ss.unfold_en = false;
 				ss.ub_addr = 0;
 				ss.acc_addr_in = 0;
 				ss.matrix_size = 0;
@@ -1600,6 +1900,26 @@ namespace UnitTest
 		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
 		EXPECT_EQ(8, decoder.values["ss.matrix_size"]);
 
+		instruction = "MMC.U 1 2 8";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_FALSE(decoder.controls["ss.switch_en"]);
+		EXPECT_FALSE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_TRUE(decoder.controls["ss.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(1, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(2, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(8, decoder.values["ss.matrix_size"]);
+
 		instruction = "MMC 1 2 8";
 		decoder.parse(instruction, delimiter);
 
@@ -1628,6 +1948,26 @@ namespace UnitTest
 		EXPECT_TRUE(decoder.controls["ss.push_en"]);
 		EXPECT_TRUE(decoder.controls["ss.switch_en"]);
 		EXPECT_TRUE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_TRUE(decoder.controls["wf.push_en"]);
+		EXPECT_FALSE(decoder.controls["wf.read_en"]);
+		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
+		EXPECT_FALSE(decoder.controls["act.act_en"]);
+		EXPECT_FALSE(decoder.controls["halt"]);
+
+		EXPECT_EQ(2, decoder.values["ss.ub_addr"]);
+		EXPECT_EQ(3, decoder.values["ss.acc_addr_in"]);
+		EXPECT_EQ(9, decoder.values["ss.matrix_size"]);
+
+		instruction = "MMC.SOU 2 3 9";
+		decoder.parse(instruction, delimiter);
+
+		EXPECT_FALSE(decoder.controls["ub.read_en"]);
+		EXPECT_FALSE(decoder.controls["ub.write_en"]);
+		EXPECT_TRUE(decoder.controls["ss.read_en"]);
+		EXPECT_TRUE(decoder.controls["ss.push_en"]);
+		EXPECT_TRUE(decoder.controls["ss.switch_en"]);
+		EXPECT_TRUE(decoder.controls["ss.overwrite_en"]);
+		EXPECT_TRUE(decoder.controls["ss.unfold_en"]);
 		EXPECT_TRUE(decoder.controls["wf.push_en"]);
 		EXPECT_FALSE(decoder.controls["wf.read_en"]);
 		EXPECT_FALSE(decoder.controls["wf.unfold_en"]);
