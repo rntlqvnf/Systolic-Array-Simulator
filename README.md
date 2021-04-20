@@ -19,9 +19,9 @@ U option means Unfold (convolution lowering)
 
 Matrix Multiply / Convolution with N input vectors
 
-  - S option means Switch (Switch MMU weight buffer)
-  - O option means Overwrite (Overwrite result on accumulator)
-  - U option means Unfold (convolution lowering)
+    - S option means Switch (Switch MMU weight buffer)
+    - O option means Overwrite (Overwrite result on accumulator)
+    - U option means Unfold (convolution lowering)
 
 - ACT.{FP} src dst N {M} (N cycle)
 
