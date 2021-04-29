@@ -2,7 +2,7 @@
 
 void Systolic_Setup::read_vector_from_UB_when_enable()
 {
-	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en };
+	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en, cdi_en, cdd_en, start, end, value, crop_en};
 	if (unfold_en)
 	{
 		int result_size = matrix_size - wsreg->get_buffer_size() + 1;
@@ -42,8 +42,47 @@ void Systolic_Setup::read_vector_from_UB(int step, int max_step, SS_Inputs data)
 			// 1 2 3 4 > >
 			// > 1 2 3 4 >
 			// > > 1 2 3 4
-			diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+			int s_row = data.start / data.matrix_size;
+			int s_col = data.start % data.matrix_size;
+			int e_row = data.end / data.matrix_size;
+			int e_col = data.end % data.matrix_size;
+
+			int c_row = i;
+			int c_col = step;
+
+			if (data.cdd_en)
+			{
+				if(c_row >= s_row && c_row <= e_row && c_col >= s_col && c_col <= e_col)
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step] - data.value;
+				else
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+
+			}
+			else if (data.cdi_en)
+			{
+				if (c_row >= s_row && c_row <= e_row && c_col >= s_col && c_col <= e_col)
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step] + data.value;
+				else
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+			}
+			else if (data.crop_en)
+			{
+				if (c_row >= s_row && c_row <= e_row && c_col >= s_col && c_col <= e_col)
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+				else
+					diagonalized_matrix[i][i + step] = 0;
+			}
+			else
+			{
+				diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+			}
+
+			Vec3b& buf2 = copy.at<Vec3b>(i, step);
+			buf2[index] = diagonalized_matrix[i][i + step];
 		}
+
+		imshow("Image augmented", copy);
+		waitKey(30);
 	}
 }
 

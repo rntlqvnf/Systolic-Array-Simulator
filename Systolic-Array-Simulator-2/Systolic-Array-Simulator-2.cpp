@@ -3,6 +3,8 @@
 #include <fstream> 
 #include <sstream>
 #include <vector>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
 #include "MMU.h"
 #include "Unified_Buffer.h"
 #include "Accumulator.h"
@@ -10,11 +12,13 @@
 #include "Decoder.h"
 
 using namespace std;
+using namespace cv;
 
-const int MAT_SIZE = 28;
+const int MAT_SIZE = 75;
 
 void open_file_and_verify(string name, ifstream& stream);
 void read_csv_and_save_to_mem(ifstream& file, Memory& mem);
+void read_image_and_save_to_mem(Memory& mem);
 void parse_by_comma(vector<string>&, stringstream&);
 void print_mem_block(string name, int8_t** mem);
 void print_mem_block(string name, int32_t** mem_block);
@@ -36,7 +40,7 @@ int main()
     Systolic_Setup ss(MAT_SIZE);
     Weight_FIFO wf(MAT_SIZE);
     MMU mmu(MAT_SIZE);
-    Accumulator acc(MAT_SIZE, 2 * MAT_SIZE);
+    Accumulator acc(MAT_SIZE, 4096);
     Activation act(MAT_SIZE);
 
     ub.hm = &hm;
@@ -52,7 +56,7 @@ int main()
     cout << "[Weight]" << endl;
     read_csv_and_save_to_mem(weight_file, dram);
     cout << "[Data]" << endl;
-    read_csv_and_save_to_mem(data_file, hm);
+    read_image_and_save_to_mem(hm);
 
     int cycle = 0;
     string buf;
@@ -89,10 +93,25 @@ int main()
         act.acc_addr = decoder.values["act.acc_addr"];
         act.ub_addr = decoder.values["act.ub_addr"];
 
+        //임시
+        ss.cdi_en = decoder.controls["ss.cdi_en"];
+        ss.cdd_en = decoder.controls["ss.cdd_en"];
+        ss.crop_en = decoder.controls["ss.crop_en"];
+        ss.start = decoder.values["ss.start"];
+        ss.end = decoder.values["ss.end"];
+        ss.value = decoder.values["ss.value"];
+
+        if (ss.cdd_en || ss.cdi_en || ss.crop_en)
+        {
+            ss.index++;
+        }
+
         if (decoder.controls["halt"]) {
             cout << endl << "[[Result]]" << endl;
-            print_mem_block("Host Memory", hm.mem_block);
+            //print_mem_block("Host Memory", hm.mem_block);
 
+            imshow("Image augmented after " + ss.index, ss.copy);
+            waitKey(0);
             exit(0);
         }
 
@@ -115,8 +134,6 @@ int main()
         mmu.calculate();
 
         cycle++;
-        //cout << "[[Cycle " << cycle << "]]" << endl;
-        //print_mem_block("Host Memory", hm.mem_block);
     }
 }
 
@@ -192,6 +209,7 @@ void read_csv_and_save_to_mem(ifstream& file, Memory& mem)
         }
     }
 
+    /*
     for (int i = 0; i < MAT_SIZE; i++)
     {
         for (int j = 0; j < MAT_SIZE; j++)
@@ -201,10 +219,30 @@ void read_csv_and_save_to_mem(ifstream& file, Memory& mem)
         cout << endl;
     }
     cout << endl;
+    */
 
     file.close();
 }
 
+void read_image_and_save_to_mem(Memory& mem)
+{
+    Mat image = imread("cat.jpeg");
+
+    Vec3b buf;
+
+    for (int i = 0; i < MAT_SIZE; i++)
+    {
+        for (int j = 0; j < MAT_SIZE; j++)
+        {
+            buf = image.at<Vec3b>(i, j);
+            mem.mem_block[i][j] = buf[0];
+            mem.mem_block[i + MAT_SIZE][j] = buf[1];
+            mem.mem_block[i + 2 * MAT_SIZE][j] = buf[2];
+        }
+    }
+
+    imshow("Original", image);
+}
 
 void parse_by_comma(vector<string>& vec, stringstream& ss)
 {

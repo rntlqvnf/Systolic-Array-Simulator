@@ -1,11 +1,15 @@
 #pragma once
 #include <stdint.h>
 #include <algorithm>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
 #include "Unified_Buffer.h"
 #include "Weight_Size_Reg.h"
 
 #define DIAG_WIDTH_1(x) ((2 * x) - 1)
 #define DIAG_WIDTH_2(x, y) ((x + y) - 1)
+
+using namespace cv;
 
 struct SS_Inputs
 {
@@ -15,6 +19,15 @@ struct SS_Inputs
 	bool switch_en;
 	bool overwrite_en;
 	bool unfold_en;
+
+	//arbt data
+	bool cdi_en;
+	bool cdd_en;
+	int start;
+	int end;
+	int value;
+
+	bool crop_en;
 };
 
 class Systolic_Setup
@@ -44,6 +57,16 @@ public:
 	int ub_addr;
 	int acc_addr_in;
 	int matrix_size;
+
+	//Arbitary set (³ªÁß¿¡ move to augment)
+	bool cdi_en;
+	bool cdd_en;
+	int start;
+	int end;
+	int value;
+	Mat copy = Mat::zeros(Size(75, 75), CV_8UC3);
+	int index = -1;
+	bool crop_en;
 
 	//output
 	int8_t* input_datas;

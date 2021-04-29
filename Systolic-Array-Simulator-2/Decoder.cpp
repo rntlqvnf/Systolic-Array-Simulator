@@ -66,8 +66,6 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 		//MMC.{SOU} src dst N
 		//Switch, Overwrite, Unfold
 
-		assert(parsed_inst.size() == 4);
-
 		string option = opcode.length() > 4 ? opcode.substr(4) : "";
 
 		//default
@@ -90,9 +88,32 @@ void Decoder::set_control_value(vector<string>& parsed_inst)
 			controls["ss.unfold_en"] = true;
 		}
 
+		//임시(augmentation)
+		if (option.find(":") != string::npos)
+		{
+			string aug_option = option.substr(option.find(":"));
+			if (aug_option == ":CDI")
+			{
+				controls["ss.cdi_en"] = true;
+			}
+			else if (aug_option == ":CDD")
+			{
+				controls["ss.cdd_en"] = true;
+			}
+			else if (aug_option == ":CZ")
+			{
+				controls["ss.crop_en"] = true;
+			}
+		}
+
 		values["ss.ub_addr"] = atoi(parsed_inst[1].c_str());
 		values["ss.acc_addr_in"] = atoi(parsed_inst[2].c_str());
 		values["ss.matrix_size"] = atoi(parsed_inst[3].c_str());
+
+		//임시
+		values["ss.start"] = atoi(parsed_inst[4].c_str());
+		values["ss.end"] = atoi(parsed_inst[5].c_str());
+		values["ss.value"] = atoi(parsed_inst[6].c_str());
 	}
 	else if (opcode.find("ACT") != string::npos)
 	{
@@ -151,6 +172,14 @@ void Decoder::reset() {
 	controls["act.fold_en"] = false;
 	controls["act.pool_en"] = false;
 	controls["halt"] = false;
+
+	//임시
+	controls["ss.cdi_en"] = false;
+	controls["ss.cdd_en"] = false;
+	controls["ss.crop_en"] = false;
+	values["ss.start"] = 0;
+	values["ss.end"] = 0;
+	values["ss.value"] = 0;
 
 	values["ub.addr"] = 0;
 	values["ub.hm_addr"] = 0;
