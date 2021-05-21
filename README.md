@@ -34,6 +34,8 @@
 
 ![아키텍쳐](./top-level-arch.png)
 
+![디테일](../detailed_arch.png)
+
 ### Instruction & Descriptions
 
 위에 있을수록 우선순위가 높음
