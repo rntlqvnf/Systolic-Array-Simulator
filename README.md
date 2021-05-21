@@ -34,7 +34,7 @@
 
 ![아키텍쳐](./top-level-arch.png)
 
-![디테일](../detailed_arch.png)
+![디테일](./detailed_arch.png)
 
 ### Instruction & Descriptions
 
