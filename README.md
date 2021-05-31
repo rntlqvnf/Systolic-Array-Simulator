@@ -72,7 +72,7 @@
     - Value 값이 음수인 경우 constant decrease이다.
 
 - **Random color distort**
-  - MMU.{SOU} src dst N 0000010000 start end range
+  - MMU.{SOU} src dst N 4 start end range
   - Start 좌표부터 End 좌표까지의 pixel에 랜덤한 값(-range ~ +range)을 더한다
   - 구체적인 알고리즘
     - 랜덤 값을 -range ~ +range 범위에서 하나 뽑는다.
@@ -80,7 +80,7 @@
     - 매번 새로운 random을 뽑아야 한다.
 
 - **Random cutout** (구현중)
-  - MMU.{SOU} src dst N 4 M
+  - MMU.{SOU} src dst N 5 M
   - M x M 크기의 random cutout 하나를 생성한다.
   - 구체적인 알고리즘
     - 랜덤으로 시작 좌표를 하다 뽑는다
