@@ -41,7 +41,7 @@
 위에 있을수록 우선순위가 높음
 
 - **Crop with resizing** (Nearest neighbor algorithm) (구현중)
-  - MMC.{SOU} src dst N 0000000001 M K
+  - MMC.{SOU} src dst N 0 M K
   - src는 crop 시작 좌표
   - M은 가로 비율 (ceil(원래 이미지 가로 길이 / Crop 이미지 가로 길이))
   - K은 세로 비율 (ceil(원래 이미지 세로 길이 / Crop 이미지 세로 길이))
@@ -52,12 +52,12 @@
        -  $\lfloor{\frac{j}{K}}\rfloor (0 \leq j < sizeof(MMU))$
 
 - **Flip left right**
-  - MMC.{SOU} src dst N 0000000010
+  - MMC.{SOU} src dst N 1
   - 구체적인 알고리즘
     - From (src + N) to src 순서로 읽어온다.
 
 - **Translation right**
-  - MMC.{SOU} src dst N 0000000100 start M
+  - MMC.{SOU} src dst N 2 start M
   - Start는 처음 읽기 시작할 주소
   - M은 start에서 시작해서 읽어올 vector의 수
   - 구체적인 알고리즘
@@ -65,7 +65,7 @@
     2. From src to (src + N - M) 순서로 읽는다.
 
 - **Color distort**
-  - MMC.{SOU} src dst N 0000001000 start end value
+  - MMC.{SOU} src dst N 3 start end value
   - Start 좌표부터 End 좌표까지의 pixel에 value 값을 더한다
   - 구체적인 알고리즘
     - MMU로 내보낼 pixel의 좌표 값이 start와 end 사이에 있다면 value를 더해서 내보낸다.
@@ -80,7 +80,7 @@
     - 매번 새로운 random을 뽑아야 한다.
 
 - **Random cutout** (구현중)
-  - MMU.{SOU} src dst N 0000100000 M
+  - MMU.{SOU} src dst N 4 M
   - M x M 크기의 random cutout 하나를 생성한다.
   - 구체적인 알고리즘
     - 랜덤으로 시작 좌표를 하다 뽑는다
