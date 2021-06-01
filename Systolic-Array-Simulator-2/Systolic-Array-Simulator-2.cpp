@@ -31,7 +31,7 @@ int main()
 
     open_file_and_verify("Instruction", instruction_file);
     open_file_and_verify("Weight", weight_file);
-    open_file_and_verify("Data", data_file);
+    //open_file_and_verify("Data", data_file);
 
     Memory hm(MAT_SIZE, 5 * MAT_SIZE);
     Memory dram(MAT_SIZE, 5 * MAT_SIZE);
@@ -93,24 +93,17 @@ int main()
         act.acc_addr = decoder.values["act.acc_addr"];
         act.ub_addr = decoder.values["act.ub_addr"];
 
-        //임시
-        ss.cdi_en = decoder.controls["ss.cdi_en"];
-        ss.cdd_en = decoder.controls["ss.cdd_en"];
-        ss.crop_en = decoder.controls["ss.crop_en"];
-        ss.start = decoder.values["ss.start"];
-        ss.end = decoder.values["ss.end"];
-        ss.value = decoder.values["ss.value"];
-
-        if (ss.cdd_en || ss.cdi_en || ss.crop_en)
-        {
-            ss.index++;
-        }
+        //Augmentation
+        ss.aug_inputs.mode = static_cast<Mode>(decoder.values["ss.mode"]);
+        ss.aug_inputs.val_1 = decoder.values["ss.val_1"];
+        ss.aug_inputs.val_2 = decoder.values["ss.val_2"];
+        ss.aug_inputs.val_3 = decoder.values["ss.val_3"];
 
         if (decoder.controls["halt"]) {
             cout << endl << "[[Result]]" << endl;
             //print_mem_block("Host Memory", hm.mem_block);
 
-            imshow("Image augmented after " + ss.index, ss.copy);
+            imshow("Image augmented", ss.img);
             waitKey(0);
             exit(0);
         }

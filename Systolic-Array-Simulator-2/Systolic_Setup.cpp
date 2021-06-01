@@ -2,7 +2,7 @@
 
 void Systolic_Setup::read_vector_from_UB_when_enable()
 {
-	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en, cdi_en, cdd_en, start, end, value, crop_en};
+	SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en, aug_inputs};
 	if (unfold_en)
 	{
 		int result_size = matrix_size - wsreg->get_buffer_size() + 1;
@@ -17,6 +17,10 @@ void Systolic_Setup::read_vector_from_UB_when_enable()
 void Systolic_Setup::read_vector_from_UB(int step, int max_step, SS_Inputs data)
 {
 	assert(ub != NULL);
+
+	srand((unsigned int)time(NULL));
+
+	if (step == 0) index++;
 
 	if (data.unfold_en)
 	{
@@ -42,47 +46,95 @@ void Systolic_Setup::read_vector_from_UB(int step, int max_step, SS_Inputs data)
 			// 1 2 3 4 > >
 			// > 1 2 3 4 >
 			// > > 1 2 3 4
-			int s_row = data.start / data.matrix_size;
-			int s_col = data.start % data.matrix_size;
-			int e_row = data.end / data.matrix_size;
-			int e_col = data.end % data.matrix_size;
 
-			int c_row = i;
-			int c_col = step;
-
-			if (data.cdd_en)
+			switch (data.aug_inputs.mode)
 			{
-				if(c_row >= s_row && c_row <= e_row && c_col >= s_col && c_col <= e_col)
-					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step] - data.value;
-				else
-					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+			case CROP_WITH_RESIZE:
+			{
+				int M = data.aug_inputs.val_1;
+				int K = data.aug_inputs.val_2;
+				int src_x = data.ub_addr % data.matrix_size;
+				int src_y = data.ub_addr / data.matrix_size;
+				int new_x = src_x + floor((float)step / (float)M);
+				int new_y = src_y + floor((float)i / (float)K);
 
+				diagonalized_matrix[i][i + step] = ub->mem_block[new_y][new_x];
+				break;
 			}
-			else if (data.cdi_en)
+			case FLIP_LEFT_RIGHT:
 			{
-				if (c_row >= s_row && c_row <= e_row && c_col >= s_col && c_col <= e_col)
-					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step] + data.value;
-				else
-					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+				diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][data.matrix_size - step];
+				break;
 			}
-			else if (data.crop_en)
+			case TRANSLATION_RIGHT:
 			{
-				if (c_row >= s_row && c_row <= e_row && c_col >= s_col && c_col <= e_col)
+				int start = data.aug_inputs.val_1;
+				int M = data.aug_inputs.val_2;
+
+				if (step < M) {
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][start + step];
+				}
+				else {
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step - M];
+				}
+				break;
+			}
+			case COLOR_DISTORT:
+			{
+				int start = data.aug_inputs.val_1;
+				int end = data.aug_inputs.val_2;
+				int value = data.aug_inputs.val_3;
+				int pos = i * data.matrix_size + step;
+
+				if (start <= pos && pos <= end) {
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step] + value;
+				}
+				else {
 					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
-				else
+				}
+				break;
+			}
+			case RND_COLOR_DISTORT:
+			{
+				int start = data.aug_inputs.val_1;
+				int end = data.aug_inputs.val_2;
+				int range = data.aug_inputs.val_3;
+				int pos = i * data.matrix_size + step;
+
+				if (start <= pos && pos <= end) {
+					int rand_val = rand() % range;
+					int neg_or_pos = rand() % 2;
+					rand_val = neg_or_pos == 1 ? rand_val : -rand_val;
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step] + rand_val;
+				}
+				else {
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+				}
+				break;
+			}
+			case RND_CUTOUT:
+			{
+				int M = data.aug_inputs.val_1;
+				if (step == 0 && index % 3 == 0) {
+					rnd_cut_x = rand() % (data.matrix_size - M);
+					rnd_cut_y = rand() % (data.matrix_size - M);
+				}
+				if (rnd_cut_x <= step && step <= rnd_cut_x + (M - 1)
+					&& rnd_cut_y <= i && i <= rnd_cut_y + (M - 1)) {
 					diagonalized_matrix[i][i + step] = 0;
+				}
+				else {
+					diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+				}
+				break;
 			}
-			else
+			default:
 			{
 				diagonalized_matrix[i][i + step] = ub->mem_block[data.ub_addr + i][step];
+				break;
 			}
-
-			Vec3b& buf2 = copy.at<Vec3b>(i, step);
-			buf2[index] = diagonalized_matrix[i][i + step];
+			}
 		}
-
-		imshow("Image augmented", copy);
-		waitKey(30);
 	}
 }
 
@@ -119,8 +171,8 @@ void Systolic_Setup::push_vectors_to_MMU_when_enable()
 	}
 	else
 	{
-		SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en };
-		push_vector_counter.count(DIAG_WIDTH_1(mmu_size) + mmu_size + 1, input); 
+		SS_Inputs input = { matrix_size, ub_addr, acc_addr_in, switch_en, overwrite_en, unfold_en, aug_inputs };
+		push_vector_counter.count(DIAG_WIDTH_1(mmu_size), input); 
 		//Why DIAG_WIDTH_1(mmu_size) + mmu_size + 1?
 		//Cycle for last column to go last mmu column is  DIAG_WIDTH_1(mmu_size) + mmu_size
 		//1 cycle for acc write
@@ -140,7 +192,7 @@ void Systolic_Setup::reset_ouputs()
 void Systolic_Setup::push_data_and_switch_vector_to_MMU(int step, int max_step, SS_Inputs data)
 {
 	advance_switch_vector(step, max_step, data.matrix_size, data.switch_en);
-	push_data_vector_to_MMU(step, max_step, data.matrix_size);
+	push_data_vector_to_MMU(step, max_step, data.matrix_size, data.aug_inputs);
 	acc_addr_out = step >= this->mmu_size ? data.acc_addr + (step - this->mmu_size) : data.acc_addr;
 	acc_write_en = step >= this->mmu_size ? true : false;
 	acc_overwrite_en = data.overwrite_en;
@@ -163,8 +215,21 @@ void Systolic_Setup::advance_switch_vector(int step, int max_step, int matrix_si
 	}
 }
 
-void Systolic_Setup::push_data_vector_to_MMU(int step, int max_step, int matrix_size)
+void Systolic_Setup::push_data_vector_to_MMU(int step, int max_step, int matrix_size, Aug_Inputs _aug_inputs)
 {
 	for (int i = 0; i < mmu_size; i++)
+	{
 		input_datas[i] = i >= matrix_size ? 0 : diagonalized_matrix[i][step];
+	}
+
+	for (int i = 0; i < matrix_size; i++)
+	{
+		if (step < 150) {
+			Vec3b& buf2 = img.at<Vec3b>(i, step);
+			buf2[index] = input_datas[i];
+		}
+	}
+
+	imshow("Image augmented", img);
+	waitKey(10);
 }

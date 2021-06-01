@@ -1,8 +1,13 @@
 #pragma once
+
 #include <stdint.h>
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
+#include <math.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
+#include "Decoder.h"
 #include "Unified_Buffer.h"
 #include "Weight_Size_Reg.h"
 
@@ -10,6 +15,14 @@
 #define DIAG_WIDTH_2(x, y) ((x + y) - 1)
 
 using namespace cv;
+
+struct Aug_Inputs 
+{
+	Mode mode;
+	int val_1;
+	int val_2;
+	int val_3;
+};
 
 struct SS_Inputs
 {
@@ -20,14 +33,7 @@ struct SS_Inputs
 	bool overwrite_en;
 	bool unfold_en;
 
-	//arbt data
-	bool cdi_en;
-	bool cdd_en;
-	int start;
-	int end;
-	int value;
-
-	bool crop_en;
+	Aug_Inputs aug_inputs;
 };
 
 class Systolic_Setup
@@ -44,7 +50,7 @@ private:
 	void reset_switch_vector(SS_Inputs); //on start
 	void push_data_and_switch_vector_to_MMU(int, int, SS_Inputs); //on count
 	void advance_switch_vector(int, int, int, bool);
-	void push_data_vector_to_MMU(int, int, int);
+	void push_data_vector_to_MMU(int, int, int, Aug_Inputs);
 	void reset_ouputs(); //on end
 
 public:
@@ -57,16 +63,7 @@ public:
 	int ub_addr;
 	int acc_addr_in;
 	int matrix_size;
-
-	//Arbitary set (³ªÁß¿¡ move to augment)
-	bool cdi_en;
-	bool cdd_en;
-	int start;
-	int end;
-	int value;
-	Mat copy = Mat::zeros(Size(75, 75), CV_8UC3);
-	int index = -1;
-	bool crop_en;
+	Aug_Inputs aug_inputs;
 
 	//output
 	int8_t* input_datas;
@@ -77,6 +74,10 @@ public:
 
 	//internal
 	int8_t** diagonalized_matrix;
+	int rnd_cut_x;
+	int rnd_cut_y;
+	int index = -1;
+	Mat img = Mat::zeros(Size(150, 75), CV_8UC3);
 
 	//other HW
 	Unified_Buffer *ub;

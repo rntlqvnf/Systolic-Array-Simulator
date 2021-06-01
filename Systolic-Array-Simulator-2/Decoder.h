@@ -11,6 +11,16 @@
 
 using namespace std;
 
+enum Mode
+{
+	CROP_WITH_RESIZE,
+	FLIP_LEFT_RIGHT,
+	TRANSLATION_RIGHT,
+	COLOR_DISTORT,
+	RND_COLOR_DISTORT,
+	RND_CUTOUT
+};
+
 class Decoder
 {
 public:
