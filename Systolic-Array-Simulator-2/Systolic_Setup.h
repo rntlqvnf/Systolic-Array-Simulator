@@ -77,7 +77,7 @@ public:
 	int rnd_cut_x;
 	int rnd_cut_y;
 	int index = -1;
-	Mat img = Mat::zeros(Size(150, 75), CV_8UC3);
+	Mat img = Mat::zeros(Size(75, 75), CV_8UC3);
 
 	//other HW
 	Unified_Buffer *ub;

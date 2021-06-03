@@ -134,7 +134,13 @@ void Systolic_Setup::read_vector_from_UB(int step, int max_step, SS_Inputs data)
 				break;
 			}
 			}
+
+			Vec3b& buf2 = img.at<Vec3b>(i, step);
+			buf2[index] = diagonalized_matrix[i][i + step];
 		}
+
+		imshow("Image augmented", img);
+		waitKey(10);
 	}
 }
 
@@ -221,15 +227,4 @@ void Systolic_Setup::push_data_vector_to_MMU(int step, int max_step, int matrix_
 	{
 		input_datas[i] = i >= matrix_size ? 0 : diagonalized_matrix[i][step];
 	}
-
-	for (int i = 0; i < matrix_size; i++)
-	{
-		if (step < 150) {
-			Vec3b& buf2 = img.at<Vec3b>(i, step);
-			buf2[index] = input_datas[i];
-		}
-	}
-
-	imshow("Image augmented", img);
-	waitKey(10);
 }
